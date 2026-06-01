@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'register_screen.dart'; // Pastikan import ini sesuai dengan lokasi file register_screen.dart kamu
+import '../register_screen.dart'; // Pastikan import ini sesuai dengan lokasi file register_screen.dart kamu
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);

@@ -6,7 +6,7 @@ import 'view/splash_screen.dart';
 import 'view/onboarding_splash.dart';
 import 'view/onboarding2_splash.dart';
 import 'view/onboarding3_splash.dart';
-import 'view/login_screen.dart'; // Import halaman Login baru
+import 'view/Login Register/login_screen.dart'; // Import halaman Login baru
 import 'view/register_screen.dart'; // Import halaman Register baru
 
 void main() {
