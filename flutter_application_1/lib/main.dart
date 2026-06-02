@@ -6,8 +6,9 @@ import 'view/splash_screen.dart';
 import 'view/onboarding_splash.dart';
 import 'view/onboarding2_splash.dart';
 import 'view/onboarding3_splash.dart';
-import 'view/login_screen.dart'; // Import halaman Login baru
-import 'view/register_screen.dart'; // Import halaman Register baru
+import 'view/login_screen.dart';
+import 'view/register_screen.dart';
+import 'view/home_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,7 +22,6 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Booknity',
-      // Halaman pertama yang dibuka tetap Splash Screen
       home: SplashScreen(),
     );
   }
@@ -62,7 +62,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
         // dan langsung pindah ke halaman LoginScreen secara otomatis
         _onboardingTimer?.cancel();
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(builder: (context) => const RegisterScreen()),
         );
       }
     });

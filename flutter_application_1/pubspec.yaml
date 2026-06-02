@@ -62,6 +62,16 @@ flutter:
   # Setelan aset yang sudah diperbaiki spasinya:
   assets:
     - assets/logo.png
+    - assets/cantik_itu_luka.png
+    - assets/coding_paud.png
+    - assets/hail_mary.png
+    - assets/hukum_perdata.png
+    - assets/laut_bercerita.png
+    - assets/midnight_library.png
+    - assets/promo.png
+    - assets/promo_summer.png
+    - assets/promo_member.png
+    - assets/promo_komik.png
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
