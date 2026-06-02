@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'edit_profile_screen.dart'; 
-import '../widgets/product_card.dart'; // Import template kartu produk baru
+import '../../widgets/product_card.dart'; // Import template kartu produk baru
 
 // IMPORT HALAMAN BARU YANG SUDAH DIBUAT
 import 'help_center_screen.dart';
