@@ -9,6 +9,8 @@ import 'view/onboarding3_splash.dart';
 import 'view/login_screen.dart';
 import 'view/register_screen.dart';
 import 'view/home_screen.dart';
+import 'view/notifikasi_screen.dart';
+import 'view/payment_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,7 +24,7 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Booknity',
-      home: SplashScreen(),
+      home: PaymentScreen(),
     );
   }
 }
