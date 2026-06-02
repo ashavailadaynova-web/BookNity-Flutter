@@ -15,6 +15,8 @@ import 'view/Profile/main_screen.dart';
 import 'view/Beranda/home_screen.dart';
 import 'view/Profile/profile_screen.dart';
 import 'view/Profile/help_center_screen.dart';
+import 'view/Notifikasi/notifikasi_screen.dart';
+import 'view/Pesanan/payment_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,10 +33,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ), // Memperbaiki error kurung tutup ThemeData yang sempat hilang
-      
       // Halaman pertama yang dibuka saat aplikasi dijalankan
       home: const SplashScreen(),
-      
+
       // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
       routes: {
         '/main': (context) => const MainScreen(),
@@ -44,6 +45,8 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/help_center': (context) => const HelpCenterScreen(),
+        '/notification': (context) =>
+            const NotificationScreen(), // 🟢 Tambahkan ini
       },
     );
   }
@@ -54,7 +57,8 @@ class MainOnboardingContainer extends StatefulWidget {
   const MainOnboardingContainer({Key? key}) : super(key: key);
 
   @override
-  State<MainOnboardingContainer> createState() => _MainOnboardingContainerState();
+  State<MainOnboardingContainer> createState() =>
+      _MainOnboardingContainerState();
 }
 
 class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
@@ -66,7 +70,9 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
   void initState() {
     super.initState();
     // Mengatur geser otomatis setiap 4 detik
-    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (
+      Timer timer,
+    ) {
       if (_currentPage < 2) {
         _currentPage++;
         if (_pageController.hasClients) {
@@ -105,7 +111,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
           });
         },
         children: const [
-          OnboardingScreen(),  // Halaman 1 (Curated for you)
+          OnboardingScreen(), // Halaman 1 (Curated for you)
           OnboardingScreen2(), // Halaman 2 (Discover your next read)
           OnboardingScreen3(), // Halaman 3 (Buy and Sell)
         ],

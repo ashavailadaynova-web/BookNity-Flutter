@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'view/Pesanan/pesanan_screen.dart'; 
+import 'view/Pesanan/pesanan_screen.dart';
 import 'view/Beranda/home_screen.dart';
+import 'view/Notifikasi/notifikasi_screen.dart';
+import 'view/Profile/profile_screen.dart';
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -11,24 +14,21 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  
+
   // 2. SESUAIKAN ISI LIST _SCREENS DI SINI
   final List<Widget> _screens = [
     const HomeScreen(),
     const PesananScreen(), // Ganti teks lama dengan class PesananScreen kamu!
-    const Center(child: Text("Halaman Notifikasi (Segera Hadir)")),
-    const Center(child: Text("Halaman Profile (Segera Hadir)")),
+    const NotificationScreen(),
+    const ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      
+      body: IndexedStack(index: _currentIndex, children: _screens),
+
       // Floating Action Button (FAB) tombol tambah (+) di tengah
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
@@ -45,7 +45,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         elevation: 8,
-        padding: EdgeInsets.zero, 
+        padding: EdgeInsets.zero,
         shape: const CircularNotchedRectangle(),
         notchMargin: 6.0,
         clipBehavior: Clip.antiAlias,
@@ -61,9 +61,17 @@ class _MainScreenState extends State<MainScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Expanded(child: _buildNavItem(Icons.home_filled, "HOME", 0)),
-              Expanded(child: _buildNavItem(Icons.menu_book_rounded, "MY ORDER", 1)),
+              Expanded(
+                child: _buildNavItem(Icons.menu_book_rounded, "MY ORDER", 1),
+              ),
               const SizedBox(width: 48), // Jeda ruang kosong untuk FAB (+)
-              Expanded(child: _buildNavItem(Icons.notifications_outlined, "NOTIFIKASI", 2)),
+              Expanded(
+                child: _buildNavItem(
+                  Icons.notifications_outlined,
+                  "NOTIFIKASI",
+                  2,
+                ),
+              ),
               Expanded(child: _buildNavItem(Icons.person, "PROFIL", 3)),
             ],
           ),
@@ -75,7 +83,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildNavItem(IconData icon, String label, int index) {
     final bool isActive = _currentIndex == index;
     final activeColor = const Color(0xFFB13D14);
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
