@@ -11,7 +11,7 @@ import 'view/Login Register/login_screen.dart';
 import 'view/Login Register/register_screen.dart';
 
 // Mengimpor halaman utama & fitur baru dari tim kelompok
-import 'view/Profile/main_screen.dart';
+import 'main_screen.dart';
 import 'view/Beranda/home_screen.dart';
 import 'view/Profile/profile_screen.dart';
 import 'view/Profile/help_center_screen.dart';
