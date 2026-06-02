@@ -1,96 +1,23 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-
-// Mengimpor semua halaman dari folder view
-import 'view/splash_screen.dart';
-import 'view/onboarding_splash.dart';
-import 'view/onboarding2_splash.dart';
-import 'view/onboarding3_splash.dart';
-import 'view/login_screen.dart'; // Import halaman Login baru
-import 'view/register_screen.dart'; // Import halaman Register baru
+import 'view/main_screen.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
+    return MaterialApp(
       title: 'Booknity',
-      // Halaman pertama yang dibuka tetap Splash Screen
-      home: SplashScreen(),
-    );
-  }
-}
-
-// Container Utama untuk menggeser halaman Onboarding secara otomatis/manual
-class MainOnboardingContainer extends StatefulWidget {
-  const MainOnboardingContainer({Key? key}) : super(key: key);
-
-  @override
-  State<MainOnboardingContainer> createState() =>
-      _MainOnboardingContainerState();
-}
-
-class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-  Timer? _onboardingTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    // Mengatur geser otomatis setiap 4 detik
-    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (
-      Timer timer,
-    ) {
-      if (_currentPage < 2) {
-        _currentPage++;
-        if (_pageController.hasClients) {
-          _pageController.animateToPage(
-            _currentPage,
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
-          );
-        }
-      } else {
-        // Jika sudah di halaman onboarding terakhir (ke-3), matikan timer
-        // dan langsung pindah ke halaman LoginScreen secara otomatis
-        _onboardingTimer?.cancel();
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _onboardingTimer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (int page) {
-          setState(() {
-            _currentPage = page;
-          });
-        },
-        children: const [
-          OnboardingScreen(), // Halaman 1 (Curated for you)
-          OnboardingScreen2(), // Halaman 2 (Discover your next read)
-          OnboardingScreen3(), // Halaman 3 (Buy and Sell)
-        ],
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
       ),
+      // Diarahkan ke MainScreen yang memegang Navbar utama
+      home: const MainScreen(),
     );
   }
 }
