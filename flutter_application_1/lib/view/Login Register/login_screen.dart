@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'register_screen.dart'; // Menyesuaikan jalur keluar folder Login Register
-import '../Beranda/Kategori_Buku/fiksi_screen.dart';    // Menyesuaikan jalur keluar folder Login Register ke fiksi_screen
+import 'register_screen.dart';
+import '../../main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -55,8 +55,9 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 260), // Memberi ruang untuk lingkaran di atas
-                  
+                  const SizedBox(
+                    height: 260,
+                  ), // Memberi ruang untuk lingkaran di atas
                   // Judul Selamat Datang
                   Text(
                     'Hi, Welcome Back!',
@@ -132,14 +133,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Jalur pintas langsung melompat ke halaman FiksiScreen buatanmu
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const FiksiScreen()),
+                        // Navigasi menghapus halaman login dan langsung memunculkan MainScreen (Beranda)
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => const MainScreen(),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8F4F17), // Warna cokelat tua
+                        backgroundColor: const Color(
+                          0xFF8F4F17,
+                        ), // Warna cokelat tua
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -243,7 +247,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: GoogleFonts.montserrat(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFFB02E6E), // Warna magenta kontras
+                            color: const Color(
+                              0xFFB02E6E,
+                            ), // Warna magenta kontras
                           ),
                         ),
                       ),
@@ -282,7 +288,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF5EFE6).withOpacity(0.6), // Warna input abu/krem muda melengkung
+            color: const Color(
+              0xFFF5EFE6,
+            ).withOpacity(0.6), // Warna input abu/krem muda melengkung
             borderRadius: BorderRadius.circular(30),
           ),
           child: TextField(
@@ -319,12 +327,9 @@ class _LoginScreenState extends State<LoginScreen> {
       height: 50,
       decoration: const BoxDecoration(shape: BoxShape.circle),
       child: Center(
-        child: customWidget ??
-            Icon(
-              iconData ?? Icons.circle,
-              size: 32,
-              color: iconColor,
-            ),
+        child:
+            customWidget ??
+            Icon(iconData ?? Icons.circle, size: 32, color: iconColor),
       ),
     );
   }

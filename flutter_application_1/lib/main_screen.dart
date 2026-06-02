@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'view/Pesanan/pesanan_screen.dart'; 
-
+import 'view/Beranda/home_screen.dart';
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -10,11 +10,11 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 3; 
-
+  int _currentIndex = 0;
+  
   // 2. SESUAIKAN ISI LIST _SCREENS DI SINI
   final List<Widget> _screens = [
-    const Center(child: Text("Halaman Home (Segera Hadir)")),
+    const HomeScreen(),
     const PesananScreen(), // Ganti teks lama dengan class PesananScreen kamu!
     const Center(child: Text("Halaman Notifikasi (Segera Hadir)")),
     const Center(child: Text("Halaman Profile (Segera Hadir)")),

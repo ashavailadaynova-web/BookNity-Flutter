@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-// --- BAGIAN IMPORT (SUDAH DIPERBAIKI) ---
-import 'view/Login Register/splash_screen.dart'; 
-import 'view/Login Register/login_screen.dart';
+// Mengimpor semua halaman dari folder view
+// --- BAGIAN IMPORT YANG SUDAH DIPERBAIKI ---
+import 'view/Login Register/splash_screen.dart';
 import 'view/Login Register/onboarding_splash.dart';
 import 'view/Login Register/onboarding2_splash.dart';
 import 'view/Login Register/onboarding3_splash.dart';
+import 'view/Login Register/login_screen.dart';
 import 'view/Login Register/register_screen.dart';
-import 'view/Beranda/Kategori_Buku/fiksi_screen.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -22,7 +22,8 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Booknity',
-      home: SplashScreen(), // Sekarang dijamin aman dan tidak akan error lagi!
+      // Halaman pertama yang dibuka tetap Splash Screen
+      home: SplashScreen(),
     );
   }
 }
@@ -44,7 +45,9 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
   @override
   void initState() {
     super.initState();
-    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (
+      Timer timer,
+    ) {
       if (_currentPage < 2) {
         _currentPage++;
         if (_pageController.hasClients) {
@@ -57,7 +60,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
       } else {
         _onboardingTimer?.cancel();
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(builder: (context) => const RegisterScreen()),
         );
       }
     });
@@ -81,12 +84,11 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
           });
         },
         children: const [
-          OnboardingScreen(),  
-          OnboardingScreen2(), 
-          OnboardingScreen3(), 
+          OnboardingScreen(),
+          OnboardingScreen2(),
+          OnboardingScreen3(),
         ],
       ),
     );
   }
 }
-

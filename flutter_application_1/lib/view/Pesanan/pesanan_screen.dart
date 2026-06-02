@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+// 1. TAMBAHAN: Import file controller yang baru dibuat di atas
+// Sesuaikan alamat path jika folder kelompokmu berbeda
+import '/controller/pesanan_controller.dart';
 
 class PesananScreen extends StatefulWidget {
   const PesananScreen({Key? key}) : super(key: key);
@@ -9,45 +12,8 @@ class PesananScreen extends StatefulWidget {
 }
 
 class _PesananScreenState extends State<PesananScreen> {
-  // DATA MASTER PESANAN
-  final List<Map<String, dynamic>> _ongoingOrders = [
-    {
-      'title': 'Animal Farm',
-      'author': 'oleh George Orwell',
-      'price': 'Rp 47.000',
-      'status': 'Sedang Diproses',
-      'statusColor': const Color(0xFFC76E2E),
-      'image': 'assets/animal_farm.png',
-    },
-    {
-      'title': 'The Midnight Library',
-      'author': 'oleh Matt Haig',
-      'price': 'Rp 76.000',
-      'status': 'Sedang Dikirim',
-      'statusColor': const Color(0xFFC76E2E),
-      'image': 'assets/midnight_library.png',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _completedOrders = [
-    {
-      'title': 'Laut Bercerita',
-      'author': 'oleh Leila S. Chudori',
-      'price': 'Rp 58.000',
-      'date': '25 Sep 2025',
-      'image': 'assets/laut_bercerita.png',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _cancelledOrders = [
-    {
-      'title': 'Hukum Perdata Internasional',
-      'author': 'oleh Dr. Ronald Saija',
-      'price': 'Rp 58.000',
-      'date': '15 Jan 2025',
-      'image': 'assets/hukum_perdata.png',
-    },
-  ];
+  // 2. TAMBAHAN: Instansiasi objek controller untuk mengambil data pesanan
+  final PesananController _pesananController = PesananController();
 
   void _bukaUlasanBottomSheet(String title, String author, String image) {
     showModalBottomSheet(
@@ -58,6 +24,8 @@ class _PesananScreenState extends State<PesananScreen> {
         bookTitle: title,
         bookAuthor: author,
         bookImage: image,
+        // 3. TAMBAHAN: Berikan akses controller ke bottom sheet agar bisa memakai fungsinya
+        controller: _pesananController,
       ),
     );
   }
@@ -116,9 +84,11 @@ class _PesananScreenState extends State<PesananScreen> {
   Widget _buildBerlangsungTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(20.0),
-      itemCount: _ongoingOrders.length,
+      // 4. DIUBAH: Mengambil panjang data dari Controller
+      itemCount: _pesananController.ongoingOrders.length,
       itemBuilder: (context, index) {
-        final item = _ongoingOrders[index];
+        // 5. DIUBAH: Mengambil isi data dari Controller
+        final item = _pesananController.ongoingOrders[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 15),
           padding: const EdgeInsets.all(12),
@@ -191,9 +161,10 @@ class _PesananScreenState extends State<PesananScreen> {
   Widget _buildSelesaiTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(20.0),
-      itemCount: _completedOrders.length,
+      // 6. DIUBAH: Mengambil data dari Controller
+      itemCount: _pesananController.completedOrders.length,
       itemBuilder: (context, index) {
-        final item = _completedOrders[index];
+        final item = _pesananController.completedOrders[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 15),
           padding: const EdgeInsets.all(12),
@@ -294,9 +265,10 @@ class _PesananScreenState extends State<PesananScreen> {
   Widget _buildDibatalkanTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(20.0),
-      itemCount: _cancelledOrders.length,
+      // 7. DIUBAH: Mengambil data dari Controller
+      itemCount: _pesananController.cancelledOrders.length,
       itemBuilder: (context, index) {
-        final item = _cancelledOrders[index];
+        final item = _pesananController.cancelledOrders[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 15),
           padding: const EdgeInsets.all(12),
@@ -372,11 +344,15 @@ class _LokalUlasanBottomSheet extends StatefulWidget {
   final String bookTitle;
   final String bookAuthor;
   final String bookImage;
+  // 8. TAMBAHAN: Menerima parameter controller dari Screen Utama
+  final PesananController controller;
+
   const _LokalUlasanBottomSheet({
     Key? key,
     required this.bookTitle,
     required this.bookAuthor,
     required this.bookImage,
+    required this.controller, // Harus ditambahkan di konstruktor
   }) : super(key: key);
 
   @override
@@ -387,104 +363,317 @@ class _LokalUlasanBottomSheet extends StatefulWidget {
 class _LokalUlasanBottomSheetState extends State<_LokalUlasanBottomSheet> {
   int _rating = 0;
   bool _isSubmitted = false;
+  final TextEditingController _deskripsiController = TextEditingController();
+  bool _fotoDitambahkan = false;
+
+  @override
+  void dispose() {
+    _deskripsiController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
-      ),
-      child: _isSubmitted ? _buildSuccessState() : _buildInputState(),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      builder: (_, controller) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFFFFDF2),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
+          ),
+          child: _isSubmitted
+              ? _buildSuccessState()
+              : _buildInputState(controller),
+        );
+      },
     );
   }
 
-  Widget _buildInputState() {
-    return Padding(
-      padding: const EdgeInsets.all(25.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
+  Widget _buildInputState(ScrollController scrollController) {
+    bool isButtonEnabled = _rating > 0;
+
+    return ListView(
+      controller: scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+      children: [
+        Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
             'Beri Ulasan',
+            style: GoogleFonts.montserrat(
+              color: const Color(0xFF42210B),
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        const SizedBox(height: 25),
+        Center(
+          child: Container(
+            width: 130,
+            height: 180,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5EFE6),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                widget.bookImage,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) =>
+                    const Icon(Icons.book, size: 50, color: Color(0xFF4A352F)),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            widget.bookTitle,
+            textAlign: TextAlign.center,
             style: GoogleFonts.montserrat(
               fontWeight: FontWeight.w700,
               fontSize: 18,
+              color: const Color(0xFF42210B),
             ),
           ),
-          const SizedBox(height: 15),
-          Text(
-            widget.bookTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        Center(
+          child: Text(
+            widget.bookAuthor,
+            style: GoogleFonts.montserrat(
+              fontSize: 13,
+              color: const Color(0xFF8C8C8C),
+            ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(5, (index) {
-              return IconButton(
-                onPressed: () => setState(() => _rating = index + 1),
-                icon: Icon(
+        ),
+        const SizedBox(height: 25),
+        Center(
+          child: Text(
+            'APA PENDAPATMU TENTANG PRODUK INI?',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF8C8C8C),
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(5, (index) {
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _rating = index + 1;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Icon(
                   index < _rating
                       ? Icons.star_rounded
                       : Icons.star_outline_rounded,
                   color: const Color(0xFFC76E2E),
-                  size: 35,
+                  size: 38,
                 ),
-              );
-            }),
-          ),
-          const SizedBox(height: 15),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _rating == 0
-                  ? null
-                  : () => setState(() => _isSubmitted = true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A352F),
               ),
-              child: const Text(
-                'Kirim Ulasan',
-                style: TextStyle(color: Colors.white),
+            );
+          }),
+        ),
+        const SizedBox(height: 25),
+        Text(
+          'TAMBAHKAN FOTO',
+          style: GoogleFonts.montserrat(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF8C8C8C),
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _fotoDitambahkan = !_fotoDitambahkan;
+            });
+          },
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFECE1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFD3C2B5), width: 1),
+              ),
+              child: _fotoDitambahkan
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(widget.bookImage, fit: BoxFit.cover),
+                    )
+                  : const Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: Color(0xFF8C8C8C),
+                    ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 25),
+        Text(
+          'BERIKAN DESKRIPSI',
+          style: GoogleFonts.montserrat(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF8C8C8C),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _deskripsiController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText:
+                'Apa ulasanmu mengenai buku ini? Berikan pendapat yang jujur ya serta rasional',
+            hintStyle: GoogleFonts.montserrat(
+              fontSize: 12,
+              color: const Color(0xFFA8A8A8),
+            ),
+            filled: true,
+            fillColor: const Color(0xFFEFECE1),
+            contentPadding: const EdgeInsets.all(12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          style: GoogleFonts.montserrat(
+            fontSize: 13,
+            color: const Color(0xFF42210B),
+          ),
+        ),
+        const SizedBox(height: 35),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton(
+            onPressed: isButtonEnabled
+                ? () {
+                    // 9. TAMBAHAN UTAMA: Panggil fungsi controller saat tombol diklik
+                    widget.controller.kirimUlasanKeDatabase(
+                      judulBuku: widget.bookTitle,
+                      rating: _rating,
+                      deskripsi: _deskripsiController.text,
+                      denganFoto: _fotoDitambahkan,
+                    );
+
+                    setState(() {
+                      _isSubmitted = true;
+                    });
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF261206),
+              disabledBackgroundColor: const Color(0xFF261206).withOpacity(0.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+            child: Text(
+              'Kirim Ulasan',
+              style: GoogleFonts.montserrat(
+                color: isButtonEnabled
+                    ? Colors.white
+                    : Colors.white.withOpacity(0.6),
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildSuccessState() {
     return Padding(
-      padding: const EdgeInsets.all(35.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle, size: 70, color: Color(0xFF4A352F)),
-          const SizedBox(height: 15),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Color(0xFF7A4B31),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check, size: 50, color: Color(0xFFFFFDF2)),
+          ),
+          const SizedBox(height: 25),
           Text(
             'Ulasan Terkirim!',
             style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.w800,
+              color: const Color(0xFF42210B),
+              fontWeight: FontWeight.w700,
               fontSize: 18,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
+          Text(
+            'Terima kasih telah membagikan\npendapatmu tentang produk ini.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.montserrat(
+              color: const Color(0xFF8C8C8C),
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 35),
           SizedBox(
             width: double.infinity,
+            height: 48,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context);
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A352F),
+                backgroundColor: const Color(0xFF261206),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
               ),
-              child: const Text(
-                'Kembali',
-                style: TextStyle(color: Colors.white),
+              child: Text(
+                'Kembali Ke Beranda',
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
