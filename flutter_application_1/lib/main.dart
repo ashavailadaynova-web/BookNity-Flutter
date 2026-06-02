@@ -1,6 +1,6 @@
 import 'dart:async'; // Ditambahkan agar objek 'Timer' tidak error lagi
 import 'package:flutter/material.dart';
-
+import 'main_screen.dart';
 // --- BAGIAN IMPORT YANG SUDAH DISATUKAN ---
 // Menggunakan struktur folder sub-direktori milikmu agar file terarah dengan rapi
 import 'view/Login Register/splash_screen.dart';
@@ -11,7 +11,6 @@ import 'view/Login Register/login_screen.dart';
 import 'view/Login Register/register_screen.dart';
 
 // Mengimpor halaman utama & fitur baru dari tim kelompok
-import 'view/Profile/main_screen.dart';
 import 'view/Beranda/home_screen.dart';
 import 'view/Profile/profile_screen.dart';
 import 'view/Profile/help_center_screen.dart';
@@ -31,10 +30,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
       ), // Memperbaiki error kurung tutup ThemeData yang sempat hilang
-      
       // Halaman pertama yang dibuka saat aplikasi dijalankan
       home: const SplashScreen(),
-      
+
       // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
       routes: {
         '/main': (context) => const MainScreen(),
@@ -54,7 +52,8 @@ class MainOnboardingContainer extends StatefulWidget {
   const MainOnboardingContainer({Key? key}) : super(key: key);
 
   @override
-  State<MainOnboardingContainer> createState() => _MainOnboardingContainerState();
+  State<MainOnboardingContainer> createState() =>
+      _MainOnboardingContainerState();
 }
 
 class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
@@ -66,7 +65,9 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
   void initState() {
     super.initState();
     // Mengatur geser otomatis setiap 4 detik
-    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (
+      Timer timer,
+    ) {
       if (_currentPage < 2) {
         _currentPage++;
         if (_pageController.hasClients) {
@@ -105,7 +106,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
           });
         },
         children: const [
-          OnboardingScreen(),  // Halaman 1 (Curated for you)
+          OnboardingScreen(), // Halaman 1 (Curated for you)
           OnboardingScreen2(), // Halaman 2 (Discover your next read)
           OnboardingScreen3(), // Halaman 3 (Buy and Sell)
         ],
