@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'register_screen.dart'; // Pastikan import ini sesuai dengan lokasi file register_screen.dart kamu
+import 'register_screen.dart';
+import '../../main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -126,12 +127,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 15),
 
-                  // Tombol Log In Utama
+                  // Tombol Log In Utama (Sudah Diperbarui Navigasinya!)
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        // Navigasi menghapus halaman login dan langsung memunculkan MainScreen (Beranda)
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => const MainScreen(),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(
                           0xFF8F4F17,
