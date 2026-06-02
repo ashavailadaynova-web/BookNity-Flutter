@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-// Mengimpor semua halaman dari folder view
-import 'view/splash_screen.dart';
-import 'view/onboarding_splash.dart';
-import 'view/onboarding2_splash.dart';
-import 'view/onboarding3_splash.dart';
-import 'view/Login Register/login_screen.dart'; // Import halaman Login baru
-import 'view/register_screen.dart'; // Import halaman Register baru
+// --- BAGIAN IMPORT (SUDAH DIPERBAIKI) ---
+import 'view/Login Register/splash_screen.dart'; 
+import 'view/Login Register/login_screen.dart';
+import 'view/Login Register/onboarding_splash.dart';
+import 'view/Login Register/onboarding2_splash.dart';
+import 'view/Login Register/onboarding3_splash.dart';
+import 'view/Login Register/register_screen.dart';
+import 'view/Beranda/Kategori_Buku/fiksi_screen.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -21,8 +22,7 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Booknity',
-      // Halaman pertama yang dibuka tetap Splash Screen
-      home: SplashScreen(),
+      home: SplashScreen(), // Sekarang dijamin aman dan tidak akan error lagi!
     );
   }
 }
@@ -44,10 +44,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
   @override
   void initState() {
     super.initState();
-    // Mengatur geser otomatis setiap 4 detik
-    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (
-      Timer timer,
-    ) {
+    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
       if (_currentPage < 2) {
         _currentPage++;
         if (_pageController.hasClients) {
@@ -58,8 +55,6 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
           );
         }
       } else {
-        // Jika sudah di halaman onboarding terakhir (ke-3), matikan timer
-        // dan langsung pindah ke halaman LoginScreen secara otomatis
         _onboardingTimer?.cancel();
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -86,11 +81,12 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
           });
         },
         children: const [
-          OnboardingScreen(), // Halaman 1 (Curated for you)
-          OnboardingScreen2(), // Halaman 2 (Discover your next read)
-          OnboardingScreen3(), // Halaman 3 (Buy and Sell)
+          OnboardingScreen(),  
+          OnboardingScreen2(), 
+          OnboardingScreen3(), 
         ],
       ),
     );
   }
 }
+

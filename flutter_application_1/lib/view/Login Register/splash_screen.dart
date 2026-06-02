@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 // 1. WAJIB IMPORT main.dart agar MainOnboardingContainer bisa dikenali
-import '../main.dart';
+import '../../main.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
