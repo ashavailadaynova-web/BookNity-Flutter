@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'edit_profile_screen.dart'; 
+import '../add_product_screen.dart';
 import '../../widgets/product_card.dart'; // Import template kartu produk baru
 
 // IMPORT HALAMAN BARU YANG SUDAH DIBUAT
@@ -465,7 +466,7 @@ class ProductSection extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 16),
-                    _buildEmptyCard(),
+                    _buildEmptyCard(context),
                   ],
           ),
         ),
@@ -473,25 +474,52 @@ class ProductSection extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyCard() {
-    return Container(
+  Widget _buildEmptyCard(BuildContext context) {
+  return InkWell(
+    borderRadius: BorderRadius.circular(24),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AddProductScreen(),
+        ),
+      );
+    },
+    child: Container(
       width: 200,
-      height: 382, 
+      height: 382,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.5),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid),
-      ),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            "Tambah Buku +",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w600),
-          ),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.3),
         ),
       ),
-    );
-  }
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.add_circle_outline,
+              size: 40,
+              color: Color(0xFFB13D14),
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              "Tambah Buku",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }

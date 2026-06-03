@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../chat_room_screen.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -55,8 +56,8 @@ class NotificationScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         _buildSectionHeader('Hari ini'),
-        _buildMessageCard(
-          name: 'Sabian Adam',
+       _buildMessageCard(
+         name: 'Sabian Adam',
           time: '20 Menit',
           text: '"Walah gitu ya kak, boleh minta tolong fotoin ngga kak?"',
           avatarUrl:
@@ -222,107 +223,140 @@ class NotificationScreen extends StatelessWidget {
 
   // 1. Kartu Model Pesan Masuk
   Widget _buildMessageCard({
-    required String name,
-    required String time,
-    required String text,
-    required String avatarUrl,
-    required bool hasActionButtons,
-    required bool isUnread,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+  required String name,
+  required String time,
+  required String text,
+  required String avatarUrl,
+  required bool hasActionButtons,
+  required bool isUnread,
+}) {
+  return Builder(
+    builder: (context) {
+      return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ChatRoomScreen(),
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(radius: 22, backgroundImage: NetworkImage(avatarUrl)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundImage: NetworkImage(avatarUrl),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 🟢 Amankan juga dengan Expanded
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                          ),
-                          children: [
-                            const TextSpan(
-                              text: 'Pesan Baru dari ',
-                              style: TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            TextSpan(
-                              text: name,
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
                               style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFE64A19),
+                                color: Colors.black,
+                                fontSize: 12,
                               ),
+                              children: [
+                                const TextSpan(
+                                  text: 'Pesan Baru dari ',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: name,
+                                  style: const TextStyle(
+                                    fontWeight:
+                                        FontWeight.bold,
+                                    color:
+                                        Color(0xFFE64A19),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+
+                        Text(
+                          time,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
+
+                    const SizedBox(height: 4),
+
                     Text(
-                      time,
-                      style: const TextStyle(color: Colors.grey, fontSize: 10),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    color: Colors.black54,
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-                if (hasActionButtons) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildActionSizeButton(
-                        'Balas',
-                        const Color(0xFF3E2723),
-                        Colors.white,
+                      text,
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
                       ),
-                      const SizedBox(width: 8),
-                      _buildActionSizeButton(
-                        'Lihat Profil',
-                        const Color(0xFFEFEBE9),
-                        const Color(0xFF3E2723),
+                    ),
+
+                    if (hasActionButtons) ...[
+                      const SizedBox(height: 8),
+
+                      Row(
+                        children: [
+                          _buildActionSizeButton(
+                            'Balas',
+                            const Color(0xFF3E2723),
+                            Colors.white,
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          _buildActionSizeButton(
+                            'Lihat Profil',
+                            const Color(0xFFEFEBE9),
+                            const Color(0xFF3E2723),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (isUnread) _buildUnreadDot(),
-        ],
-      ),
-    );
-  }
+                  ],
+                ),
+              ),
 
+              if (isUnread) _buildUnreadDot(),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
   // 2. Kartu Model Penawaran Toko Buku
   Widget _buildShopCard({
     required String shopName,
@@ -652,23 +686,30 @@ class NotificationScreen extends StatelessWidget {
   }
 
   // Tombol aksi kecil (Balas / Lihat Profil)
-  Widget _buildActionSizeButton(String label, Color bgColor, Color textColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
+  Widget _buildActionSizeButton(
+  String label,
+  Color bgColor,
+  Color textColor,
+) {
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 6,
+    ),
+    decoration: BoxDecoration(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        color: textColor,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 
   // Bulatan penanda notif belum dibaca
   Widget _buildUnreadDot() {

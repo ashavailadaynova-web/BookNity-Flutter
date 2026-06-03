@@ -10,6 +10,8 @@ import 'Kategori_Buku/sekolah_screen.dart';
 import 'Kategori_Buku/selfhelp_screen.dart';
 import 'Kategori_Buku/semua_screen.dart';
 import 'Kategori_Buku/senihobi_screen.dart';
+import '../message_screen.dart';
+import 'wishlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -76,16 +78,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.favorite_border, color: Color(0xFF4A2E2B)),
-            onPressed: () {},
+          icon: const Icon(
+            Icons.favorite_border,
+            color: Color(0xFF4A2E2B),
           ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const WishlistScreen(),
+              ),
+            );
+          },
+        ),
           IconButton(
-            icon: const Icon(
-              Icons.chat_bubble_outline,
-              color: Color(0xFF4A2E2B),
-            ),
-            onPressed: () {},
+          icon: const Icon(
+            Icons.chat_bubble_outline,
+            color: Color(0xFF4A2E2B),
           ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const MessageScreen(),
+              ),
+            );
+          },
+        ),
         ],
       ),
     );

@@ -4,16 +4,38 @@ import 'view/Pesanan/pesanan_screen.dart';
 import 'view/Beranda/home_screen.dart';
 import 'view/Notifikasi/notifikasi_screen.dart';
 import 'view/Profile/profile_screen.dart';
+import 'view/add_product_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int selectedIndex;
+
+  const MainScreen({
+    super.key,
+    this.selectedIndex = 0,
+  });
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
+  // @override
+  //   void initState() {
+  //     super.initState();
+  //     _currentIndex = widget.selectedIndex;
+  //   }
+
+    @override
+void initState() {
+  super.initState();
+
+  print("MASUK MAIN SCREEN");
+  print(widget.selectedIndex);
+
+  _currentIndex = widget.selectedIndex;
+}
+
+ late int _currentIndex;
 
   // 2. SESUAIKAN ISI LIST _SCREENS DI SINI
   final List<Widget> _screens = [
@@ -32,14 +54,23 @@ class _MainScreenState extends State<MainScreen> {
       // Floating Action Button (FAB) tombol tambah (+) di tengah
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Aksi tambah buku
-        },
-        backgroundColor: const Color(0xFFB13D14),
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 32),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AddProductScreen(),
+          ),
+        );
+      },
+      backgroundColor: const Color(0xFFB13D14),
+      elevation: 4,
+      shape: const CircleBorder(),
+      child: const Icon(
+        Icons.add,
+        color: Colors.white,
+        size: 32,
       ),
+    ),
 
       // Bottom Navigation Bar
       bottomNavigationBar: BottomAppBar(

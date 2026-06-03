@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'success_add_product_screen.dart';
 
+
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
 

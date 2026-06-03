@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'chat_room_screen.dart';
 
 class MessageScreen extends StatelessWidget {
   const MessageScreen({super.key});
@@ -84,19 +85,44 @@ class MessageScreen extends StatelessWidget {
       backgroundColor: const Color(0xffF8F6F4),
       body: SafeArea(
         child: Column(
-          children: [
-            const SizedBox(height: 32),
+  children: [
+    const SizedBox(height: 16),
 
-           Center(
-            child: Text(
-              "Kotak Pesan",
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xff4A342E),
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Color(0xff4A342E),
+            ),
+          ),
+
+          Expanded(
+            child: Center(
+              child: Text(
+                "Kotak Pesan",
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xff4A342E),
+                ),
               ),
             ),
           ),
+
+          const SizedBox(
+            width: 48,
+          ),
+        ],
+      ),
+    ),
+
+    const SizedBox(height: 20),
 
             const SizedBox(height: 20),
 
@@ -156,11 +182,18 @@ class MessageScreen extends StatelessWidget {
                   final chat = chats[index];
 
                   return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    onTap: () {},
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChatRoomScreen(),
+                      ),
+                    );
+                  },
 
                     leading: Stack(
                       children: [
