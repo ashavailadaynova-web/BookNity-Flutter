@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// 1. TAMBAHAN: Import file controller yang baru dibuat di atas
-// Sesuaikan alamat path jika folder kelompokmu berbeda
-import '/controller/pesanan_controller.dart';
+import 'package:provider/provider.dart'; // 👈 TAMBAHAN: Diperlukan untuk membaca Provider
+import '../../viewmodel/pesanan_view_model.dart';
 
 class PesananScreen extends StatefulWidget {
-  const PesananScreen({Key? key}) : super(key: key);
+  const PesananScreen({super.key}); // 👈 REVISI: Menggunakan format super.key modern
 
   @override
   State<PesananScreen> createState() => _PesananScreenState();
 }
 
 class _PesananScreenState extends State<PesananScreen> {
-  // 2. TAMBAHAN: Instansiasi objek controller untuk mengambil data pesanan
-  final PesananController _pesananController = PesananController();
+  // 👈 REVISI: Menggunakan Provider.of agar state management terbaca sempurna
+  late PesananViewModel _pesananController;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pesananController = Provider.of<PesananViewModel>(context);
+  }
 
   void _bukaUlasanBottomSheet(String title, String author, String image) {
     showModalBottomSheet(
@@ -24,7 +29,6 @@ class _PesananScreenState extends State<PesananScreen> {
         bookTitle: title,
         bookAuthor: author,
         bookImage: image,
-        // 3. TAMBAHAN: Berikan akses controller ke bottom sheet agar bisa memakai fungsinya
         controller: _pesananController,
       ),
     );
@@ -84,10 +88,8 @@ class _PesananScreenState extends State<PesananScreen> {
   Widget _buildBerlangsungTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(20.0),
-      // 4. DIUBAH: Mengambil panjang data dari Controller
       itemCount: _pesananController.ongoingOrders.length,
       itemBuilder: (context, index) {
-        // 5. DIUBAH: Mengambil isi data dari Controller
         final item = _pesananController.ongoingOrders[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 15),
@@ -101,21 +103,21 @@ class _PesananScreenState extends State<PesananScreen> {
           ),
           child: Row(
             children: [
-              _buildBookCover(item['image']),
+              _buildBookCover(item['image'] ?? ''),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item['title'],
+                      item['title'] ?? '',
                       style: GoogleFonts.montserrat(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
                     ),
                     Text(
-                      item['author'],
+                      item['author'] ?? '',
                       style: GoogleFonts.montserrat(
                         fontSize: 11,
                         color: Colors.grey,
@@ -123,7 +125,7 @@ class _PesananScreenState extends State<PesananScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      item['price'],
+                      item['price'] ?? '',
                       style: GoogleFonts.montserrat(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -136,15 +138,15 @@ class _PesananScreenState extends State<PesananScreen> {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: (item['statusColor'] as Color).withOpacity(0.1),
+                        color: ((item['statusColor'] ?? Colors.orange) as Color).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
-                        item['status'],
+                        item['status'] ?? '',
                         style: GoogleFonts.montserrat(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: item['statusColor'],
+                          color: (item['statusColor'] ?? Colors.orange) as Color,
                         ),
                       ),
                     ),
@@ -161,7 +163,6 @@ class _PesananScreenState extends State<PesananScreen> {
   Widget _buildSelesaiTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(20.0),
-      // 6. DIUBAH: Mengambil data dari Controller
       itemCount: _pesananController.completedOrders.length,
       itemBuilder: (context, index) {
         final item = _pesananController.completedOrders[index];
@@ -179,7 +180,7 @@ class _PesananScreenState extends State<PesananScreen> {
             children: [
               Row(
                 children: [
-                  _buildBookCover(item['image']),
+                  _buildBookCover(item['image'] ?? ''),
                   const SizedBox(width: 15),
                   Expanded(
                     child: Column(
@@ -189,14 +190,14 @@ class _PesananScreenState extends State<PesananScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              item['title'],
+                              item['title'] ?? '',
                               style: GoogleFonts.montserrat(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
                               ),
                             ),
                             Text(
-                              item['date'],
+                              item['date'] ?? '',
                               style: GoogleFonts.montserrat(
                                 fontSize: 10,
                                 color: Colors.grey,
@@ -205,7 +206,7 @@ class _PesananScreenState extends State<PesananScreen> {
                           ],
                         ),
                         Text(
-                          item['author'],
+                          item['author'] ?? '',
                           style: GoogleFonts.montserrat(
                             fontSize: 11,
                             color: Colors.grey,
@@ -213,7 +214,7 @@ class _PesananScreenState extends State<PesananScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          item['price'],
+                          item['price'] ?? '',
                           style: GoogleFonts.montserrat(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -241,9 +242,9 @@ class _PesananScreenState extends State<PesananScreen> {
                   const SizedBox(width: 10),
                   ElevatedButton(
                     onPressed: () => _bukaUlasanBottomSheet(
-                      item['title'],
-                      item['author'],
-                      item['image'],
+                      item['title'] ?? '',
+                      item['author'] ?? '',
+                      item['image'] ?? '',
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4A352F),
@@ -265,7 +266,6 @@ class _PesananScreenState extends State<PesananScreen> {
   Widget _buildDibatalkanTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(20.0),
-      // 7. DIUBAH: Mengambil data dari Controller
       itemCount: _pesananController.cancelledOrders.length,
       itemBuilder: (context, index) {
         final item = _pesananController.cancelledOrders[index];
@@ -281,21 +281,21 @@ class _PesananScreenState extends State<PesananScreen> {
           ),
           child: Row(
             children: [
-              _buildBookCover(item['image']),
+              _buildBookCover(item['image'] ?? ''),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item['title'],
+                      item['title'] ?? '',
                       style: GoogleFonts.montserrat(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
                     ),
                     Text(
-                      item['author'],
+                      item['author'] ?? '',
                       style: GoogleFonts.montserrat(
                         fontSize: 11,
                         color: Colors.grey,
@@ -303,7 +303,7 @@ class _PesananScreenState extends State<PesananScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      item['price'],
+                      item['price'] ?? '',
                       style: GoogleFonts.montserrat(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -344,16 +344,15 @@ class _LokalUlasanBottomSheet extends StatefulWidget {
   final String bookTitle;
   final String bookAuthor;
   final String bookImage;
-  // 8. TAMBAHAN: Menerima parameter controller dari Screen Utama
-  final PesananController controller;
+  final PesananViewModel controller;
 
   const _LokalUlasanBottomSheet({
-    Key? key,
+    super.key, // 👈 REVISI: Menggunakan format super.key modern
     required this.bookTitle,
     required this.bookAuthor,
     required this.bookImage,
-    required this.controller, // Harus ditambahkan di konstruktor
-  }) : super(key: key);
+    required this.controller, 
+  });
 
   @override
   State<_LokalUlasanBottomSheet> createState() =>
@@ -584,7 +583,7 @@ class _LokalUlasanBottomSheetState extends State<_LokalUlasanBottomSheet> {
           child: ElevatedButton(
             onPressed: isButtonEnabled
                 ? () {
-                    // 9. TAMBAHAN UTAMA: Panggil fungsi controller saat tombol diklik
+                    // 👈 Panggil fungsi database dari viewmodel
                     widget.controller.kirimUlasanKeDatabase(
                       judulBuku: widget.bookTitle,
                       rating: _rating,

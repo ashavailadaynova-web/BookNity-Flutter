@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "44811337434",
+    "project_id": "booknity-flutter",
+    "storage_bucket": "booknity-flutter.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44811337434:android:60b794e3a37fda2c01afe3",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3XcXrfg7UrVGk7oaPrQJTHy5oKY7Lzq4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

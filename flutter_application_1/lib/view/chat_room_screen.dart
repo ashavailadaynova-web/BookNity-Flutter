@@ -17,16 +17,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 16,
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -43,6 +39,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   ),
                   onTap: () {
                     Navigator.pop(context);
+
                     /// nanti controller kamera
                   },
                 ),
@@ -59,6 +56,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   ),
                   onTap: () {
                     Navigator.pop(context);
+
                     /// nanti controller galeri
                   },
                 ),
@@ -86,7 +84,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       time: "10:46 AM",
     ),
     MessageModel(
-      text: "Halo kak, terima kasih sudah berkunjung di Toko kami. Untuk tawaran buku Laut Bercerita kami terima ya.",
+      text:
+          "Halo kak, terima kasih sudah berkunjung di Toko kami. Untuk tawaran buku Laut Bercerita kami terima ya.",
       isMe: false,
       time: "11:00 AM",
     ),
@@ -126,7 +125,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 width: 55,
                 height: 75,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 55),
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.book, size: 55),
               ),
             ),
             const SizedBox(width: 10),
@@ -211,7 +211,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     width: 50,
                     height: 70,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 50),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.book, size: 50),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -286,7 +287,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF9F6EE), // Menambahkan background scaffold agar serasi
+      backgroundColor: const Color(
+        0xffF9F6EE,
+      ), // Menambahkan background scaffold agar serasi
       appBar: AppBar(
         title: const Text("Chat Room"),
         backgroundColor: const Color(0xff4A241B),
@@ -299,10 +302,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           /// DATE
           Center(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 6,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
               decoration: BoxDecoration(
                 color: const Color(0xffEFE7D7),
                 borderRadius: BorderRadius.circular(20),
@@ -397,39 +397,44 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           /// MESSAGES LISTVIEW
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 final message = messages[index];
-                bool isOffer = message.type == MessageType.offerPending ||
+                bool isOffer =
+                    message.type == MessageType.offerPending ||
                     message.type == MessageType.offerAccepted;
 
                 return Align(
-                  alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment: message.isMe
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Column(
-                    crossAxisAlignment: message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                    crossAxisAlignment: message.isMe
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
                     children: [
                       // Logika Pemisahan Render Chat Bubble
                       isOffer
                           ? _buildCustomOfferMessage(message)
                           : Container(
-                              constraints: const BoxConstraints(
-                                maxWidth: 260,
-                              ),
+                              constraints: const BoxConstraints(maxWidth: 260),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: message.isMe ? const Color(0xff4A241B) : Colors.white,
+                                color: message.isMe
+                                    ? const Color(0xff4A241B)
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: Text(
                                 message.text ?? '',
                                 style: GoogleFonts.plusJakartaSans(
-                                  color: message.isMe ? Colors.white : Colors.black,
+                                  color: message.isMe
+                                      ? Colors.white
+                                      : Colors.black,
                                   fontSize: 14,
                                 ),
                               ),
@@ -460,9 +465,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: 0.08,
-                  ),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -472,10 +475,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               children: [
                 GestureDetector(
                   onTap: _showMediaMenu,
-                  child: const Icon(
-                    Icons.add,
-                    color: Color(0xff5A4038),
-                  ),
+                  child: const Icon(Icons.add, color: Color(0xff5A4038)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -486,6 +486,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       hintText: "Type a message...",
                       hintStyle: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
+                   
                         color: const Color(0xffB6B6B6),
                       ),
                     ),
@@ -503,11 +504,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     color: Color(0xff4A241B),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.send,
-                    size: 18,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.send, size: 18, color: Colors.white),
                 ),
               ],
             ),
