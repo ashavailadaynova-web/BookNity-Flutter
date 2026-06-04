@@ -19,28 +19,17 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  // @override
-  //   void initState() {
-  //     super.initState();
-  //     _currentIndex = widget.selectedIndex;
-  //   }
+  late int _currentIndex;
 
-    @override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.selectedIndex;
+  }
 
-  print("MASUK MAIN SCREEN");
-  print(widget.selectedIndex);
-
-  _currentIndex = widget.selectedIndex;
-}
-
- late int _currentIndex;
-
-  // 2. SESUAIKAN ISI LIST _SCREENS DI SINI
   final List<Widget> _screens = [
     const HomeScreen(),
-    const PesananScreen(), // Ganti teks lama dengan class PesananScreen kamu!
+    const PesananScreen(),
     const NotificationScreen(),
     const ProfileScreen(),
   ];
@@ -51,26 +40,26 @@ void initState() {
       extendBody: true,
       body: IndexedStack(index: _currentIndex, children: _screens),
 
-      // Floating Action Button (FAB) tombol tambah (+) di tengah
+      // Tombol Tambah (+) di tengah
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const AddProductScreen(),
-          ),
-        );
-      },
-      backgroundColor: const Color(0xFFB13D14),
-      elevation: 4,
-      shape: const CircleBorder(),
-      child: const Icon(
-        Icons.add,
-        color: Colors.white,
-        size: 32,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddProductScreen(),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFFB13D14),
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 32,
+        ),
       ),
-    ),
 
       // Bottom Navigation Bar
       bottomNavigationBar: BottomAppBar(
@@ -92,17 +81,9 @@ void initState() {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Expanded(child: _buildNavItem(Icons.home_filled, "HOME", 0)),
-              Expanded(
-                child: _buildNavItem(Icons.menu_book_rounded, "MY ORDER", 1),
-              ),
-              const SizedBox(width: 48), // Jeda ruang kosong untuk FAB (+)
-              Expanded(
-                child: _buildNavItem(
-                  Icons.notifications_outlined,
-                  "NOTIFIKASI",
-                  2,
-                ),
-              ),
+              Expanded(child: _buildNavItem(Icons.menu_book_rounded, "MY ORDER", 1)),
+              const SizedBox(width: 48), // Ruang untuk FAB
+              Expanded(child: _buildNavItem(Icons.notifications_outlined, "NOTIFIKASI", 2)),
               Expanded(child: _buildNavItem(Icons.person, "PROFIL", 3)),
             ],
           ),

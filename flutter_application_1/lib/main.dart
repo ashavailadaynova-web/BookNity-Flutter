@@ -17,6 +17,7 @@ import 'view/Profile/profile_screen.dart';
 import 'view/Profile/help_center_screen.dart';
 import 'view/Notifikasi/notifikasi_screen.dart';
 import 'view/Pesanan/payment_screen.dart';
+import 'view/product_detail_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -45,8 +46,8 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/help_center': (context) => const HelpCenterScreen(),
-        '/notification': (context) =>
-            const NotificationScreen(), // 🟢 Tambahkan ini
+        '/notification': (context) => const NotificationScreen(), 
+        '/product_detail': (context) => const ProductDetailScreen(), // 👈 REVISI: Rute detail produk terdaftar di sini
       },
     );
   }
