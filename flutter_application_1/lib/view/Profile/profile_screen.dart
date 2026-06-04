@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+// PASTIKAN PATH IMPORT DI BAWAH INI SESUAI DENGAN FOLDER KAMU:
 import 'edit_profile_screen.dart'; 
 import '../add_product_screen.dart';
-import '../../widgets/product_card.dart';
-
-// IMPORT HALAMAN BARU YANG SUDAH DIBUAT
 import 'help_center_screen.dart';
 import 'settings_screen.dart';
+
+// IMPORT WIDGET PRODUCT CARD YANG BARU SAJA DIPISAH:
+import '../../widgets/product_card.dart'; // Sesuaikan lokasi foldernya!
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -399,6 +401,11 @@ class ProductSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🛠️ HITUNG UKURAN DUA KARTU AGAR PAS DENGAN LEBAR LAYAR HP
+    double screenWidth = MediaQuery.of(context).size.width;
+    double cardWidth = (screenWidth - 20 - 20 - 16) / 2; // (Lebar Layar - Padding Kiri - Padding Kanan - Jarak Tengah) / 2
+    double emptyCardHeight = (cardWidth * 4 / 3) + 102; // Menyeimbangkan tinggi Kotak Tambah dengan ProductCard
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -428,51 +435,56 @@ class ProductSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         
-        // --- BAGIAN YANG DIPERBAIKI ---
-        // Bungkus dengan SizedBox agar memiliki tinggi tetap yang jelas
         SizedBox(
-          height: 382, 
+          height: 360, // Dinaikkan sedikit untuk ruang bayangan kartu di bawah
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(left: 24, right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 20), // Diseimbangkan kiri-kanan
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: isSoldOutSection
                   ? [
-                      ProductCard(
-                        imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000', 
-                        title: "Seharian Bareng Bestie",
-                        author: "Hiradini Rahmah & Arie",
-                        price: "Rp 33.000",
-                        onTap: () {},
-                        onEditTap: () {},
-                        onDeleteTap: () {},
+                      SizedBox(
+                        width: cardWidth,
+                        child: ProductCard(
+                          imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000', 
+                          title: "Seharian Bareng Bestie",
+                          author: "Hiradini Rahmah & Arie",
+                          price: "Rp 33.000",
+                          onTap: () {},
+                          onEditTap: () {},
+                          onDeleteTap: () {},
+                        ),
                       ),
                     ]
                   : [
-                      ProductCard(
-                        imageUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=1000', 
-                        title: "Cape Deh!",
-                        author: "Tere Liye",
-                        price: "Rp 33.000",
-                        onTap: () {},
-                        onEditTap: () {},
-                        onDeleteTap: () {},
+                      SizedBox(
+                        width: cardWidth,
+                        child: ProductCard(
+                          imageUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=1000', 
+                          title: "Cape Deh!",
+                          author: "Tere Liye",
+                          price: "Rp 33.000",
+                          onTap: () {},
+                          onEditTap: () {},
+                          onDeleteTap: () {},
+                        ),
                       ),
                       const SizedBox(width: 16),
-                      _buildEmptyCard(context),
+                      SizedBox(
+                        width: cardWidth,
+                        child: _buildEmptyCard(context, emptyCardHeight),
+                      ),
                     ],
             ),
           ),
         ),
-        // ------------------------------
       ],
     );
   }
 
-  Widget _buildEmptyCard(BuildContext context) {
-    // ... (kode _buildEmptyCard kamu tetap sama) ...
+  Widget _buildEmptyCard(BuildContext context, double height) {
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: () {
@@ -484,8 +496,7 @@ class ProductSection extends StatelessWidget {
         );
       },
       child: Container(
-        width: 200,
-        height: 382, // Tinggi ini harus sama dengan SizedBox di atas
+        height: height, // Mengikuti tinggi kalkulasi seimbang
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.5),
           borderRadius: BorderRadius.circular(24),
