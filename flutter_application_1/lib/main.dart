@@ -1,14 +1,15 @@
 import 'dart:async'; // Ditambahkan agar objek 'Timer' tidak error lagi
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 
-// --- BAGIAN IMPORT YANG SUDAH DISATUKAN ---
-// Menggunakan struktur folder sub-direktori milikmu agar file terarah dengan rapi
-import 'view/Login Register/splash_screen.dart';
-import 'view/Login Register/onboarding_splash.dart';
-import 'view/Login Register/onboarding2_splash.dart';
-import 'view/Login Register/onboarding3_splash.dart';
-import 'view/Login Register/login_screen.dart';
-import 'view/Login Register/register_screen.dart';
+// --- BAGIAN IMPORT ONBOARDING & LOGIN (SUDAH DIPERBAIKI) ---
+import 'package:flutter_application_1/view/Login%20Register/splash_screen.dart';
+import 'package:flutter_application_1/view/Login%20Register/onboarding_splash.dart';
+import 'package:flutter_application_1/view/Login%20Register/onboarding2_splash.dart';
+import 'package:flutter_application_1/view/Login%20Register/onboarding3_splash.dart';
+import 'package:flutter_application_1/view/Login%20Register/login_screen.dart';
+import 'package:flutter_application_1/view/Login%20Register/register_screen.dart';
 
 // Mengimpor halaman utama & fitur baru dari tim kelompok
 import 'main_screen.dart';
@@ -19,8 +20,19 @@ import 'view/Notifikasi/notifikasi_screen.dart';
 import 'view/Pesanan/payment_screen.dart';
 import 'view/product_detail_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'viewmodel/pesanan_view_model.dart';
+
+void main() async { 
+  WidgetsFlutterBinding.ensureInitialized(); 
+  await Firebase.initializeApp(); 
+  
+  runApp(
+    // Kita bungkus di sini agar fitur transaksi bisa diakses di halaman mana pun
+    ChangeNotifierProvider(
+      create: (context) => PesananViewModel(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -33,8 +45,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-      ), // Memperbaiki error kurung tutup ThemeData yang sempat hilang
-      // Halaman pertama yang dibuka saat aplikasi dijalankan
+      ), 
       home: const SplashScreen(),
 
       // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
@@ -47,7 +58,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/help_center': (context) => const HelpCenterScreen(),
         '/notification': (context) => const NotificationScreen(), 
-        '/product_detail': (context) => const ProductDetailScreen(), // 👈 REVISI: Rute detail produk terdaftar di sini
+        '/product_detail': (context) => const ProductDetailScreen(), 
       },
     );
   }
@@ -55,7 +66,7 @@ class MyApp extends StatelessWidget {
 
 // Container Utama untuk menggeser halaman Onboarding secara otomatis/manual
 class MainOnboardingContainer extends StatefulWidget {
-  const MainOnboardingContainer({Key? key}) : super(key: key);
+  const MainOnboardingContainer({super.key}); // 👈 REVISI: Menggunakan format super.key yang modern
 
   @override
   State<MainOnboardingContainer> createState() =>
@@ -111,10 +122,10 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
             _currentPage = page;
           });
         },
-        children: const [
-          OnboardingScreen(), // Halaman 1 (Curated for you)
-          OnboardingScreen2(), // Halaman 2 (Discover your next read)
-          OnboardingScreen3(), // Halaman 3 (Buy and Sell)
+        children: [
+OnboardingScreen(), // Halaman 1
+OnboardingScreen2(), // Halaman 2 (sementara)
+OnboardingScreen3(), // Halaman 3 (sementara)
         ],
       ),
     );
