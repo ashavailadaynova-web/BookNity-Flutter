@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // 1. TAMBAHAN: Import file controller yang baru dibuat di atas
 // Sesuaikan alamat path jika folder kelompokmu berbeda
-import '/controller/pesanan_controller.dart';
+import '/viewmodel/pesanan_controller.dart';
 
 class PesananScreen extends StatefulWidget {
   const PesananScreen({Key? key}) : super(key: key);

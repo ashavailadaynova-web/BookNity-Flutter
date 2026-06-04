@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import '../widgets/buyer_product_card.dart';
 import 'store_review_screen.dart';
 import 'profile/other_profile_screen.dart';
+import '../../model/book_model.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  const ProductDetailScreen({super.key});
+
+  final BookModel book;
+
+  const ProductDetailScreen({
+    super.key,
+    required this.book,
+  });
 
   @override
-  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+  State<ProductDetailScreen> createState() =>
+      _ProductDetailScreenState();
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTickerProviderStateMixin {

@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/help_center': (context) => const HelpCenterScreen(),
         '/notification': (context) => const NotificationScreen(), 
-        '/product_detail': (context) => const ProductDetailScreen(), // 👈 REVISI: Rute detail produk terdaftar di sini
+        // '/product_detail': (context) => const ProductDetailScreen(), // 👈 REVISI: Rute detail produk terdaftar di sini
       },
     );
   }
