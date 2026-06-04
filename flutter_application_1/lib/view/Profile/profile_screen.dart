@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'edit_profile_screen.dart'; 
-import '../../widgets/product_card.dart'; // Import template kartu produk baru
 
-// IMPORT HALAMAN BARU YANG SUDAH DIBUAT
+// PASTIKAN PATH IMPORT DI BAWAH INI SESUAI DENGAN FOLDER KAMU:
+import 'edit_profile_screen.dart'; 
+import '../add_product_screen.dart';
 import 'help_center_screen.dart';
 import 'settings_screen.dart';
+
+// IMPORT WIDGET PRODUCT CARD YANG BARU SAJA DIPISAH:
+import '../../widgets/product_card.dart'; // Sesuaikan lokasi foldernya!
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -242,7 +245,7 @@ class ProfileScreen extends StatelessWidget {
               
               const SizedBox(height: 32),
 
-              // MENU NAVIGASI TAMBAHAN (REVISI: JARAK RENGGANG & SUDAH TERHUBUNG)
+              // MENU NAVIGASI TAMBAHAN
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
@@ -269,7 +272,6 @@ class ProfileScreen extends StatelessWidget {
                         iconColor: const Color(0xFF8D6E63),
                         title: "Pusat Bantuan",
                         onTap: () {
-                          // NAVIGASI KE PUSAT BANTUAN
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const HelpCenterScreen()),
@@ -282,7 +284,6 @@ class ProfileScreen extends StatelessWidget {
                         iconColor: Colors.grey[600]!,
                         title: "Pengaturan Akun",
                         onTap: () {
-                          // NAVIGASI KE PENGATURAN AKUN
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const SettingsScreen()),
@@ -296,7 +297,6 @@ class ProfileScreen extends StatelessWidget {
                         title: "Keluar Akun",
                         textColor: const Color(0xFFB13D14),
                         onTap: () {
-                          // Alur logout langsung tanpa konfirmasi pop-up
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Berhasil keluar akun')),
                           );
@@ -401,6 +401,11 @@ class ProductSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🛠️ HITUNG UKURAN DUA KARTU AGAR PAS DENGAN LEBAR LAYAR HP
+    double screenWidth = MediaQuery.of(context).size.width;
+    double cardWidth = (screenWidth - 20 - 20 - 16) / 2; // (Lebar Layar - Padding Kiri - Padding Kanan - Jarak Tengah) / 2
+    double emptyCardHeight = (cardWidth * 4 / 3) + 102; // Menyeimbangkan tinggi Kotak Tambah dengan ProductCard
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -429,66 +434,96 @@ class ProductSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(left: 24, right: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: isSoldOutSection
-                ? [
-                    ProductCard(
-                      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000', 
-                      bookTitle: "Seharian Bareng Bestie",
-                      author: "Hiradini Rahmah & Arie",
-                      price: "Rp 33.000",
-                      rating: "4.5",
-                      isSoldOut: true,
-                      onEditPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Edit buku: Seharian Bareng Bestie')),
-                        );
-                      },
-                    ),
-                  ]
-                : [
-                    ProductCard(
-                      imageUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=1000', 
-                      bookTitle: "Cape Deh!",
-                      author: "Tere Liye",
-                      price: "Rp 33.000",
-                      rating: "4.7",
-                      onEditPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Edit buku: Cape Deh!')),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 16),
-                    _buildEmptyCard(),
-                  ],
+        
+        SizedBox(
+          height: 360, // Dinaikkan sedikit untuk ruang bayangan kartu di bawah
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20), // Diseimbangkan kiri-kanan
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: isSoldOutSection
+                  ? [
+                      SizedBox(
+                        width: cardWidth,
+                        child: ProductCard(
+                          imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000', 
+                          title: "Seharian Bareng Bestie",
+                          author: "Hiradini Rahmah & Arie",
+                          price: "Rp 33.000",
+                          onTap: () {},
+                          onEditTap: () {},
+                          onDeleteTap: () {},
+                        ),
+                      ),
+                    ]
+                  : [
+                      SizedBox(
+                        width: cardWidth,
+                        child: ProductCard(
+                          imageUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=1000', 
+                          title: "Cape Deh!",
+                          author: "Tere Liye",
+                          price: "Rp 33.000",
+                          onTap: () {},
+                          onEditTap: () {},
+                          onDeleteTap: () {},
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: cardWidth,
+                        child: _buildEmptyCard(context, emptyCardHeight),
+                      ),
+                    ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyCard() {
-    return Container(
-      width: 200,
-      height: 382, 
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withOpacity(0.3), style: BorderStyle.solid),
-      ),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            "Tambah Buku +",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w600),
+  Widget _buildEmptyCard(BuildContext context, double height) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AddProductScreen(),
+          ),
+        );
+      },
+      child: Container(
+        height: height, // Mengikuti tinggi kalkulasi seimbang
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.3),
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.add_circle_outline,
+                size: 40,
+                color: Color(0xFFB13D14),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Tambah Buku",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
           ),
         ),
       ),

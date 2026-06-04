@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-import 'package:flutter_application_1/view/Beranda/home_screen.dart';
-import 'package:flutter_application_1/view/Pesanan/pesanan_screen.dart';
-import 'package:flutter_application_1/view/Profile/profile_screen.dart'; // Menyesuaikan dengan sub-folder Profile terbarumu
-
+import 'view/Pesanan/pesanan_screen.dart'; 
+import 'view/Beranda/home_screen.dart';
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int selectedIndex;
+
+  const MainScreen({
+    super.key,
+    this.selectedIndex = 0,
+  });
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  // Default diatur ke index 0 (Halaman Home) agar saat pertama kali masuk, 
-  // aplikasi langsung memuat Beranda utama Booknity.
-  int _currentIndex = 0; 
-
-  // Daftar halaman utama aplikasi Booknity yang sudah digabungkan secara utuh
+  int _currentIndex = 0;
+  
+  // 2. SESUAIKAN ISI LIST _SCREENS DI SINI
   final List<Widget> _screens = [
-    const HomeScreen(),      // Index 0: Halaman Beranda dari tim kelompok
-    const PesananScreen(),   // Index 1: Halaman Daftar Pesanan (Koki/Controller)
-    const Center(child: Text("Halaman Notifikasi (Segera Hadir)")), // Index 2
-    const ProfileScreen(),   // Index 3: Halaman Profil asli buatanmu (Bukan teks placeholder lagi)
+    const HomeScreen(),
+    const PesananScreen(), // Ganti teks lama dengan class PesananScreen kamu!
+    const Center(child: Text("Halaman Notifikasi (Segera Hadir)")),
+    const Center(child: Text("Halaman Profile (Segera Hadir)")),
   ];
 
   @override
@@ -35,23 +35,26 @@ class _MainScreenState extends State<MainScreen> {
         children: _screens,
       ),
       
-      // Floating Action Button (FAB) tombol tambah (+) di tengah menjorok ke dalam Navbar
+      // Floating Action Button (FAB) tombol tambah (+) di tengah
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Aksi untuk menambah buku baru
+          // Aksi tambah buku
         },
         backgroundColor: const Color(0xFFB13D14),
         elevation: 4,
         shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 32),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 32,
+        ),
       ),
 
       // Perbaikan Struktur Bottom Navigation Bar agar tidak memicu double layout/garis ganda
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         elevation: 8,
-        // Mengatur padding bawaan BottomAppBar menjadi 0 agar tidak membuat navbar double/terlahu tinggi
         padding: EdgeInsets.zero, 
         shape: const CircularNotchedRectangle(),
         notchMargin: 6.0,
@@ -70,7 +73,7 @@ class _MainScreenState extends State<MainScreen> {
             children: [
               Expanded(child: _buildNavItem(Icons.home_filled, "HOME", 0)),
               Expanded(child: _buildNavItem(Icons.menu_book_rounded, "MY ORDER", 1)),
-              const SizedBox(width: 48), // Jeda ruang kosong pas di bawah tombol FAB (+) tengah
+              const SizedBox(width: 48), // Jeda ruang kosong untuk FAB (+)
               Expanded(child: _buildNavItem(Icons.notifications_outlined, "NOTIFIKASI", 2)),
               Expanded(child: _buildNavItem(Icons.person, "PROFIL", 3)),
             ],
@@ -83,7 +86,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildNavItem(IconData icon, String label, int index) {
     final bool isActive = _currentIndex == index;
     final activeColor = const Color(0xFFB13D14);
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(

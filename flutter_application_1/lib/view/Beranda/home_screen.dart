@@ -10,6 +10,10 @@ import 'Kategori_Buku/sekolah_screen.dart';
 import 'Kategori_Buku/selfhelp_screen.dart';
 import 'Kategori_Buku/semua_screen.dart';
 import 'Kategori_Buku/senihobi_screen.dart';
+import '../message_screen.dart';
+import 'wishlist_screen.dart';
+
+import '../../widgets/buyer_product_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -76,15 +80,32 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.favorite_border, color: Color(0xFF4A2E2B)),
-            onPressed: () {},
+            icon: const Icon(
+              Icons.favorite_border,
+              color: Color(0xFF4A2E2B),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WishlistScreen(),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(
               Icons.chat_bubble_outline,
               color: Color(0xFF4A2E2B),
             ),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MessageScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -555,7 +576,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Inti Komponen Buku
+  // Blueprint Utama penghubung ke BuyerProductCard widget
   Widget _buildKontenCard(
     String judul,
     String penulis,
@@ -565,91 +586,21 @@ class _HomeScreenState extends State<HomeScreen> {
     String pathGambar,
     String namaToko,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AspectRatio(
-          aspectRatio: 3 / 4,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                pathGambar,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey.shade300,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.book, color: Colors.grey, size: 40),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                judul,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : Colors.grey,
-              size: 16,
-            ),
-          ],
-        ),
-        Text(
-          'oleh $penulis',
-          style: const TextStyle(color: Colors.grey, fontSize: 11),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          harga,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFFA23914),
-            fontSize: 13,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Row(
-          children: [
-            const Icon(Icons.store, size: 12, color: Colors.grey),
-            const SizedBox(width: 4),
-            Expanded(
-              child: Text(
-                namaToko,
-                style: const TextStyle(color: Colors.grey, fontSize: 10),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const Icon(Icons.star, size: 12, color: Colors.amber),
-            const SizedBox(width: 2),
-            Text(
-              rating,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ],
+    return BuyerProductCard(
+      imageUrl: pathGambar,
+      title: judul,
+      author: penulis,
+      price: harga,
+      rating: rating,
+      storeName: namaToko,
+      isFavorite: isFavorite,
+      onTap: () {
+        // Navigasi ke halaman detail produk saat kartu ditekan
+        Navigator.pushNamed(context, '/product_detail');
+      },
+      onFavoriteTap: () {
+        // Logika ketika tombol Love ditekan (misal tambah ke wishlist)
+      },
     );
   }
 
@@ -658,4 +609,4 @@ class _HomeScreenState extends State<HomeScreen> {
     _bannerController.dispose();
     super.dispose();
   }
-}
+} // 👈 Ini adalah tanda kurung kurawal paling akhir di file kamu
