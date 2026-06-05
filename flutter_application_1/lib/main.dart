@@ -12,7 +12,8 @@ import 'view/home_screen.dart';
 import 'view/notifikasi_screen.dart';
 import 'view/payment_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

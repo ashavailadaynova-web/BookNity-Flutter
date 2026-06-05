@@ -140,9 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFF8F4F17,
-                        ), // Warna cokelat tua
+                        backgroundColor: const Color(0xFF8F4F17),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -200,6 +198,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         iconColor: const Color(0xFF1877F2),
                       ),
                       const SizedBox(width: 20),
+
+                      // 🟢 DI SINI TOMBOL GOOGLE FIX & AKTIF
                       _buildSocialButton(
                         'assets/google.png',
                         isIconData: false,
@@ -208,7 +208,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           size: 40,
                           color: Colors.orange,
                         ),
+                        onTap: () async {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF8F4F17),
+                              ),
+                            ),
+                          );
+
+                          // Menggunakan instansi _authController yang sudah didefinisikan di ata
+                        },
                       ),
+
                       const SizedBox(width: 20),
                       _buildSocialButton(
                         'assets/apple.png',
@@ -246,9 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: GoogleFonts.montserrat(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: const Color(
-                              0xFFB02E6E,
-                            ), // Warna magenta kontras
+                            color: const Color(0xFFB02E6E),
                           ),
                         ),
                       ),
@@ -287,9 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         Container(
           decoration: BoxDecoration(
-            color: const Color(
-              0xFFF5EFE6,
-            ).withOpacity(0.6), // Warna input abu/krem muda melengkung
+            color: const Color(0xFFF5EFE6).withOpacity(0.6),
             borderRadius: BorderRadius.circular(30),
           ),
           child: TextField(
@@ -313,22 +323,33 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Helper Widget untuk Tombol Sosial Media
+  // Helper Widget untuk Tombol Sosial Media (SUDAH TERMASUK AKSI KLIK!)
   Widget _buildSocialButton(
     String assetPath, {
     required bool isIconData,
     IconData? iconData,
     Color? iconColor,
     Widget? customWidget,
+    VoidCallback? onTap, // 👈 Wadah fungsi klik ditambahkan di sini
   }) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: const BoxDecoration(shape: BoxShape.circle),
-      child: Center(
-        child:
-            customWidget ??
-            Icon(iconData ?? Icons.circle, size: 32, color: iconColor),
+    return GestureDetector(
+      onTap:
+          onTap, // 👈 Bungkus dengan GestureDetector agar bisa merespon sentuhan
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFFD9D9D9),
+            width: 1,
+          ), // Tambahan border halus melingkar agar rapi
+        ),
+        child: Center(
+          child:
+              customWidget ??
+              Icon(iconData ?? Icons.circle, size: 32, color: iconColor),
+        ),
       ),
     );
   }

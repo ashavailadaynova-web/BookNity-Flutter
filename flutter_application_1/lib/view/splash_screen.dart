@@ -16,12 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     // Mengatur timer selama 3 detik sebelum pindah
     Timer(const Duration(seconds: 6), () {
-      // 2. GANTI NextScreen() menjadi MainOnboardingContainer()
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const MainOnboardingContainer(),
-        ),
-      );
+      Navigator.of(context).pushReplacementNamed('/check_auth');
     });
   }
 

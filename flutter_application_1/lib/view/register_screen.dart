@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 
+// Sesuaikan jumlah "../" dengan struktur folder proyekmu ya!
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
 
@@ -168,13 +170,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
+                      onPressed: () async {
+                        // 1. Tampilkan Loading Indikator
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF8F4F17),
+                            ),
                           ),
                         );
                       },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8F4F17),
                         shape: RoundedRectangleBorder(
@@ -232,12 +240,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         size: 32,
                         color: Color(0xFF1877F2),
                       ),
-                      const SizedBox(width: 25),
                       const Icon(
                         Icons.g_mobiledata,
                         size: 45,
                         color: Colors.orange,
                       ),
+
                       const SizedBox(width: 25),
                       const Icon(Icons.apple, size: 32, color: Colors.black),
                     ],
