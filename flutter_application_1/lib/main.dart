@@ -30,20 +30,41 @@ import 'view/Profile/help_center_screen.dart';
 import 'view/Notifikasi/notifikasi_screen.dart';
 import 'view/Pesanan/payment_screen.dart';
 import 'view/product_detail_screen.dart';
-
+import 'viewmodel/book_viewmodel.dart';
 import 'viewmodel/pesanan_view_model.dart';
+import 'viewmodel/auth_viewmodel.dart';
+import 'viewmodel/user_viewmodel.dart';
 
 void main() async { 
   WidgetsFlutterBinding.ensureInitialized(); 
   await Firebase.initializeApp(); 
   
   runApp(
-    // Kita bungkus di sini agar fitur transaksi bisa diakses di halaman mana pun
-    ChangeNotifierProvider(
-      create: (context) => PesananViewModel(),
-      child: const MyApp(),
-    ),
-  );
+  MultiProvider(
+    providers: [
+
+      ChangeNotifierProvider(
+        create: (_) => PesananViewModel(),
+      ),
+
+      ChangeNotifierProvider(
+        create: (_) => BookViewModel(),
+      ),
+
+      ChangeNotifierProvider(
+        create: (_) => AuthViewModel(),
+      ),
+
+      ChangeNotifierProvider(
+      create: (_) => UserViewModel(),
+      ),
+
+    ],
+
+    child: const MyApp(),
+  ),
+);
+ 
 }
 
 class MyApp extends StatelessWidget {
@@ -60,17 +81,16 @@ class MyApp extends StatelessWidget {
       home: const SplashScreen(),
 
       // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
-      routes: {
-        '/main': (context) => const MainScreen(),
-        '/onboarding_container': (context) => const MainOnboardingContainer(),
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/help_center': (context) => const HelpCenterScreen(),
-        '/notification': (context) => const NotificationScreen(), 
-        '/product_detail': (context) => const ProductDetailScreen(), 
-      },
+     routes: {
+  '/main': (context) => const MainScreen(),
+  '/onboarding_container': (context) => const MainOnboardingContainer(),
+  '/login': (context) => const LoginScreen(),
+  '/register': (context) => const RegisterScreen(),
+  '/home': (context) => const HomeScreen(),
+  '/profile': (context) => const ProfileScreen(),
+  '/help_center': (context) => const HelpCenterScreen(),
+  '/notification': (context) => const NotificationScreen(),
+},
     );
   }
 }

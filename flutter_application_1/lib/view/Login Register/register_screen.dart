@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
+import 'package:provider/provider.dart';
+
+import '../../viewmodel/auth_viewmodel.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -14,6 +17,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  bool _isPasswordHidden = true;
 
   @override
   void dispose() {
@@ -168,13 +173,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: () async {
+  if (!_isAgreed) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Setujui syarat dan ketentuan terlebih dahulu',
+        ),
+      ),
+    );
+    return;
+  }
+
+  if (_nameController.text.trim().isEmpty ||
+      _emailController.text.trim().isEmpty ||
+      _passwordController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Lengkapi semua data terlebih dahulu',
+        ),
+      ),
+    );
+    return;
+  }
+
+  final authViewModel =
+      context.read<AuthViewModel>();
+
+  final success =
+      await authViewModel.register(
+    name: _nameController.text.trim(),
+    email: _emailController.text.trim(),
+    password:
+        _passwordController.text.trim(),
+  );
+
+  if (!mounted) return;
+
+  if (success) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Registrasi berhasil',
+        ),
+      ),
+    );
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const LoginScreen(),
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Registrasi gagal',
+        ),
+      ),
+    );
+  }
+},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8F4F17),
                         shape: RoundedRectangleBorder(
@@ -258,8 +324,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          Navigator.pop(context); // Kembali ke halaman Login
-                        },
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
+                      },
                         child: Text(
                           'Log In',
                           style: GoogleFonts.montserrat(
@@ -282,49 +353,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // Reusable Input Field
-  Widget _buildInputField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    bool isPassword = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-          child: Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF42210B),
-            ),
+  // Reusable Input Field
+Widget _buildInputField({
+  required String label,
+  required String hint,
+  required TextEditingController controller,
+  bool isPassword = false,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(
+          left: 4.0,
+          bottom: 8.0,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF42210B),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5EFE6).withOpacity(0.6),
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: GoogleFonts.montserrat(
-                color: const Color(0xFFB3A699),
-                fontSize: 14,
+      ),
+
+      Container(
+        decoration: BoxDecoration(
+          color: const Color(
+            0xFFF5EFE6,
+          ).withOpacity(0.6),
+          borderRadius:
+              BorderRadius.circular(30),
+        ),
+
+        child: TextField(
+          controller: controller,
+
+          obscureText: isPassword
+              ? _isPasswordHidden
+              : false,
+
+          decoration: InputDecoration(
+            hintText: hint,
+
+            hintStyle:
+                GoogleFonts.montserrat(
+              color: const Color(
+                0xFFB3A699,
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 16,
-              ),
-              border: InputBorder.none,
+              fontSize: 14,
             ),
+
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _isPasswordHidden
+                          ? Icons
+                              .visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordHidden =
+                            !_isPasswordHidden;
+                      });
+                    },
+                  )
+                : null,
+
+            contentPadding:
+                const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 16,
+            ),
+
+            border: InputBorder.none,
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }

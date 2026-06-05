@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../viewmodel/book_viewmodel.dart';
+import '../../model/book_model.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
+  
 }
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchController = TextEditingController();
+  final BookViewModel viewModel = BookViewModel(); List<BookModel> searchResults = [];
 
   List<String> histories = [
     "Harry Potter",
@@ -17,6 +21,14 @@ class _SearchScreenState extends State<SearchScreen> {
     "Cooking",
     "Tere Liye",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    searchResults =
+        viewModel.getAllBooks();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +44,12 @@ class _SearchScreenState extends State<SearchScreen> {
               /// SEARCH BAR
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.arrow_back),
-                  ),
+                  GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Icon(Icons.arrow_back),
+                ),
 
                   Expanded(
                     child: Container(
@@ -45,15 +59,35 @@ class _SearchScreenState extends State<SearchScreen> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: TextField(
-                        controller: searchController,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          prefixIcon: const Icon(Icons.search),
-                          hintText: "Search books, authors...",
-                          hintStyle: GoogleFonts.plusJakartaSans(),
-                          suffixIcon: const Icon(Icons.close),
+                      controller: searchController,
+
+                      onChanged: (value) {
+                        setState(() {
+                          searchResults =
+                              viewModel.searchBooks(value);
+                        });
+                      },
+
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        prefixIcon: const Icon(Icons.search),
+                        hintText: "Search books, authors...",
+                        hintStyle: GoogleFonts.plusJakartaSans(),
+
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.close),
+
+                          onPressed: () {
+                            searchController.clear();
+
+                            setState(() {
+                              searchResults =
+                                  viewModel.getAllBooks();
+                            });
+                          },
                         ),
                       ),
+                    )
                     ),
                   ),
                 ],
@@ -185,26 +219,31 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
 
               const SizedBox(height: 18),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: bookCard(
-                      "Laut Bercerita",
-                      "Leila S. Chudori",
-                      "Rp. 60.000",
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: bookCard(
-                      "Cantik Itu Luka",
-                      "Eka Kurniawan",
-                      "Rp. 58.000",
-                    ),
-                  ),
-                ],
-              ),
+                itemCount: searchResults.length,
+
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                  childAspectRatio: 0.55,
+                ),
+
+                itemBuilder: (context, index) {
+
+                  final book = searchResults[index];
+
+                  return bookCard(
+                    book.title,
+                    book.author,
+                    book.price,
+                  );
+                },
+              )
             ],
           ),
         ),

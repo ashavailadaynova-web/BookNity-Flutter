@@ -1,6 +1,10 @@
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../model/book_model.dart';
+import '../../viewmodel/book_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import '../Login Register/login_screen.dart';
 // PASTIKAN PATH IMPORT DI BAWAH INI SESUAI DENGAN FOLDER KAMU:
 import 'edit_profile_screen.dart'; 
 import '../add_product_screen.dart';
@@ -23,6 +27,10 @@ class ProfileScreen extends StatelessWidget {
     const badgeYellow = Color(0xFFFFF1C5);
 
     final List<String> myGenres = ["Horror", "Mystery"];
+    final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email ?? "Belum login";
+    final nama =
+    email.split('@').first;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -73,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 16),
               
               Text(
-                "Daynova Shava",
+                nama,
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -82,7 +90,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                "Bergabung sejak 2023",
+                email,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -90,150 +98,117 @@ class ProfileScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 20),
-              
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildFollowStat("1.2k", "PENGIKUT"),
-                  const SizedBox(width: 40),
-                  _buildFollowStat("842", "MENGIKUTI"),
-                ],
-              ),
 
-              const SizedBox(height: 24),
+Padding(
+  padding: const EdgeInsets.symmetric(
+    horizontal: 24,
+  ),
+  child: SizedBox(
+    width: double.infinity,
+    height: 50,
+    child: ElevatedButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                const EditProfileScreen(),
+          ),
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: accentColor,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(25),
+        ),
+      ),
+      child: Text(
+        "Edit Profile",
+        style: GoogleFonts.poppins(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    ),
+  ),
+),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: accentColor,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                    child: Text(
-                      "Edit Profile",
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
-              
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Expanded(child: _buildInfoCapsule(badgeCream, const Color(0xFF8D6E63), Icons.menu_book_rounded, "10", "TERJUAL")),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildInfoCapsule(badgePink, const Color(0xFFD81B60), Icons.local_fire_department_rounded, "10", "MEMBELI")),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildInfoCapsule(badgeYellow, const Color(0xFFF57F17), Icons.stars_rounded, "4.8", "PENILAIAN")),
-                  ],
-                ),
-              ),
+Padding(
+  padding: const EdgeInsets.symmetric(
+    horizontal: 20,
+  ),
+  child: Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 20,
+      vertical: 24,
+    ),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(28),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        Text(
+          "Aktivitas Saya",
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF3E2723),
+          ),
+        ),
 
-              const SizedBox(height: 24),
-              
-              // BIO CARD
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "BIO",
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF8D6E63),
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          Icon(Icons.format_quote_rounded, color: Colors.grey[200], size: 36),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Lover of gothic horror and vintage hardcovers. Usually found in a sun-drenched corner with a cup of oolong and a thick novel.",
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          height: 1.5,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                        child: Divider(color: Color(0xFFF5EBE0), thickness: 1),
-                      ),
-                      Text(
-                        "FAVORITE GENRES",
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF8D6E63),
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 4.0,
-                        children: myGenres.map((genre) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF1C5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              genre,
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: primaryTextColor,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
-              // SECTION PRODUK AKTIF
-              const ProductSection(
-                title: "Produk Saya",
-                isSoldOutSection: false,
-              ),
+        const SizedBox(height: 20),
+
+        Row(
+          mainAxisAlignment:
+              MainAxisAlignment.spaceAround,
+          children: [
+
+            _buildActivityItem(
+              Icons.menu_book_rounded,
+              "0",
+              "Dijual",
+              const Color(0xFFFFB74D),
+            ),
+
+            _buildActivityItem(
+              Icons.local_shipping_rounded,
+              "0",
+              "Terjual",
+              const Color(0xFF81C784),
+            ),
+
+            _buildActivityItem(
+              Icons.star_rounded,
+              "0.0",
+              "Rating",
+              const Color(0xFFFFD54F),
+            ),
+          ],
+        ),
+      ],
+    ),
+  ),
+),
+
+const SizedBox(height: 32),
+
+const ProductSection(
+  title: "Produk Saya",
+  isSoldOutSection: false,
+),
 
               const SizedBox(height: 28),
 
@@ -291,29 +266,39 @@ class ProfileScreen extends StatelessWidget {
                         },
                       ),
                       const Divider(color: Color(0xFFF5EBE0), height: 8, indent: 64),
-                      _buildMenuItem(
-                        icon: Icons.logout_rounded,
-                        iconColor: const Color(0xFFB13D14),
-                        title: "Keluar Akun",
-                        textColor: const Color(0xFFB13D14),
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Berhasil keluar akun')),
-                          );
-                        },
-                      ),
+                     _buildMenuItem(
+                      icon: Icons.logout_rounded,
+                      iconColor: const Color(0xFFB13D14),
+                      title: "Keluar Akun",
+                      textColor: const Color(0xFFB13D14),
+
+                      onTap: () async {
+
+                        await FirebaseAuth.instance.signOut();
+
+                        if (!context.mounted) return;
+
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                    ),
                     ],
                   ),
                 ),
               ),
               
               const SizedBox(height: 120), 
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+           ],
+          ), // Column
+        ), // SingleChildScrollView
+      ), // SafeArea
+    ); // Scaffold
+  } // build
 
   Widget _buildFollowStat(String value, String label) {
     return Column(
@@ -353,6 +338,48 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildActivityItem(
+  IconData icon,
+  String value,
+  String label,
+  Color color,
+) {
+  return Column(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: 24,
+        ),
+      ),
+
+      const SizedBox(height: 8),
+
+      Text(
+        value,
+        style: GoogleFonts.poppins(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+
+      Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: Colors.grey,
+        ),
+      ),
+    ],
+  );
+}
 
   Widget _buildMenuItem({
     required IconData icon,
@@ -435,55 +462,95 @@ class ProductSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         
-        SizedBox(
-          height: 360, // Dinaikkan sedikit untuk ruang bayangan kartu di bawah
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20), // Diseimbangkan kiri-kanan
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: isSoldOutSection
-                  ? [
-                      SizedBox(
-                        width: cardWidth,
-                        child: ProductCard(
-                          imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1000', 
-                          title: "Seharian Bareng Bestie",
-                          author: "Hiradini Rahmah & Arie",
-                          price: "Rp 33.000",
-                          onTap: () {},
-                          onEditTap: () {},
-                          onDeleteTap: () {},
-                        ),
-                      ),
-                    ]
-                  : [
-                      SizedBox(
-                        width: cardWidth,
-                        child: ProductCard(
-                          imageUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=1000', 
-                          title: "Cape Deh!",
-                          author: "Tere Liye",
-                          price: "Rp 33.000",
-                          onTap: () {},
-                          onEditTap: () {},
-                          onDeleteTap: () {},
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        width: cardWidth,
-                        child: _buildEmptyCard(context, emptyCardHeight),
-                      ),
-                    ],
-            ),
+       SizedBox(
+      height: 360,
+      child: StreamBuilder<List<BookModel>>(
+      stream: context.read<BookViewModel>().booksStream,
+      builder: (context, snapshot) {
+      if (snapshot.connectionState ==
+      ConnectionState.waiting) {
+      return const Center(
+      child: CircularProgressIndicator(),
+      );
+      }
+
+
+        final books = snapshot.data ?? [];
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics:
+              const BouncingScrollPhysics(),
+          padding:
+              const EdgeInsets.symmetric(
+            horizontal: 20,
           ),
-        ),
+          child: Row(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              ...books.map((book) {
+                return Padding(
+                  padding:
+                      const EdgeInsets.only(
+                    right: 16,
+                  ),
+                  child: SizedBox(
+                    width: cardWidth,
+                    child: ProductCard(
+                      imageUrl: book.image,
+                      title: book.title,
+                      author: book.author,
+                      price: book.price,
+
+                      onTap: () {},
+
+                      onEditTap: () {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Edit ${book.title}',
+                            ),
+                          ),
+                        );
+                      },
+
+                      onDeleteTap:
+                          () async {
+                        if (book.id !=
+                            null) {
+                          await context
+                              .read<
+                                  BookViewModel>()
+                              .deleteBook(
+                                book.id!,
+                              );
+                        }
+                      },
+                    ),
+                  ),
+                );
+              }).toList(),
+
+              if (!isSoldOutSection)
+                SizedBox(
+                  width: cardWidth,
+                  child: _buildEmptyCard(
+                    context,
+                    emptyCardHeight,
+                  ),
+                ),
+            ],
+          ),
+        );
+ },
+    ),
+  ),
       ],
     );
   }
-
   Widget _buildEmptyCard(BuildContext context, double height) {
     return InkWell(
       borderRadius: BorderRadius.circular(24),

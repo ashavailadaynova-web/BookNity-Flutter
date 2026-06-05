@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
-
-// --- IMPORT SEMUA HALAMAN KATEGORI YANG SUDAH KAMU BUAT ---
-import 'Kategori_Buku/anak_anak_screen.dart';
-import 'Kategori_Buku/fiksi_screen.dart';
-import 'Kategori_Buku/komik_screen.dart';
-import 'Kategori_Buku/masakan_screen.dart';
-import 'Kategori_Buku/sejarah_screen.dart';
-import 'Kategori_Buku/sekolah_screen.dart';
-import 'Kategori_Buku/selfhelp_screen.dart';
-import 'Kategori_Buku/semua_screen.dart';
-import 'Kategori_Buku/senihobi_screen.dart';
+import 'category_screen.dart';
 import '../message_screen.dart';
 import 'wishlist_screen.dart';
+import '../search_screen.dart';
 
 import '../../widgets/buyer_product_card.dart';
 
@@ -114,35 +105,61 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 2. Search Bar
   Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        children: [
-          Expanded(
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SearchScreen(),
+                ),
+              );
+            },
             child: Container(
+              height: 50,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF8EE),
                 borderRadius: BorderRadius.circular(25),
               ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search books, authors, ISBN',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: InputBorder.none,
+              alignment: Alignment.centerLeft,
+              child: const Text(
+                'Search books, authors, ISBN',
+                style: TextStyle(
+                  color: Colors.grey,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          const CircleAvatar(
+        ),
+
+        const SizedBox(width: 8),
+
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const SearchScreen(),
+              ),
+            );
+          },
+          child: const CircleAvatar(
             backgroundColor: Color(0xFF5C3826),
-            child: Icon(Icons.search, color: Colors.white),
+            child: Icon(
+              Icons.search,
+              color: Colors.white,
+            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   // 3. Banner Promo Slider
   Widget _buildBannerSlider() {
@@ -293,39 +310,16 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: kategori.length,
             itemBuilder: (context, index) {
               return GestureDetector(
-                onTap: () {
-                  String namaKategori = kategori[index]['nama'];
+               onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CategoryScreen(
+                      category: kategori[index]['nama'],
+                    ),
+                  ),
+                );
 
-                  // Peta navigasi berdasarkan nama kategori yang ditekan
-                  Widget targetScreen;
-
-                  if (namaKategori == 'SEMUA') {
-                    targetScreen = const SemuaScreen();
-                  } else if (namaKategori == 'FIKSI') {
-                    targetScreen = const FiksiScreen();
-                  } else if (namaKategori == 'SENI/HOBI') {
-                    targetScreen = const SeniHobiScreen();
-                  } else if (namaKategori == 'KOMIK') {
-                    targetScreen = const KomikScreen();
-                  } else if (namaKategori == 'SEKOLAH') {
-                    targetScreen = const SekolahScreen();
-                  } else if (namaKategori == 'SEJARAH') {
-                    targetScreen = const SejarahScreen();
-                  } else if (namaKategori == 'MASAKAN') {
-                    targetScreen = const MasakanScreen();
-                  } else if (namaKategori == 'SELF-HELP') {
-                    targetScreen = const SelfHelpScreen();
-                  } else if (namaKategori == 'ANAK-ANAK') {
-                    targetScreen = const AnakAnakScreen();
-                  } else {
-                    return;
-                  }
-
-                  // Eksekusi perpindahan halaman secara mulus
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => targetScreen),
-                  );
                 },
                 child: Padding(
                   padding: const EdgeInsets.only(right: 16.0),
