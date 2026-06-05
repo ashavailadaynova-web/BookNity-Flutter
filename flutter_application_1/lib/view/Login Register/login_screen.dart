@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'register_screen.dart';
 import '../../main_screen.dart';
+import 'package:provider/provider.dart';
+
+import '../../viewmodel/auth_viewmodel.dart';
+import '../../main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -13,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isPasswordHidden = true;
 
   @override
   void dispose() {
@@ -102,29 +107,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
 
                   // Input Password
-                  _buildInputField(
-                    label: 'Password',
-                    hint: 'Enter Password',
-                    controller: _passwordController,
-                    isPassword: true,
-                  ),
+                 _buildInputField(
+                  label: 'Password',
+                  hint: 'Enter Password',
+                  controller: _passwordController,
+                  isPassword: true,
+                ),
 
                   // Tombol Forgot Password
                   Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      child: Text(
-                        'Forgot Password?',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B4E37),
-                          decoration: TextDecoration.underline,
-                        ),
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      'Forgot Password?',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF8F4F17),
                       ),
                     ),
                   ),
+                ),
                   const SizedBox(height: 15),
 
                   // Tombol Log In Utama (Sudah Diperbarui Navigasinya!)
@@ -132,13 +136,38 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Navigasi menghapus halaman login dan langsung memunculkan MainScreen (Beranda)
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const MainScreen(),
-                          ),
+                     onPressed: () async {
+                        final authViewModel =
+                            context.read<AuthViewModel>();
+
+                        final success =
+                            await authViewModel.login(
+                          email: _emailController.text.trim(),
+                          password:
+                              _passwordController.text.trim(),
                         );
+
+                        if (!mounted) return;
+
+                        if (success) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const MainScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Email atau password salah',
+                              ),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(
@@ -294,25 +323,51 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(30),
           ),
           child: TextField(
-            controller: controller,
-            obscureText: isPassword,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: GoogleFonts.montserrat(
-                color: const Color(0xFFB3A699),
-                fontSize: 14,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 16,
-              ),
-              border: InputBorder.none,
+          controller: controller,
+
+          obscureText:
+              isPassword
+                  ? _isPasswordHidden
+                  : false,
+
+          decoration: InputDecoration(
+            hintText: hint,
+
+            hintStyle: GoogleFonts.montserrat(
+              color: const Color(0xFFB3A699),
+              fontSize: 14,
             ),
+
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _isPasswordHidden
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordHidden =
+                            !_isPasswordHidden;
+                      });
+                    },
+                  )
+                : null,
+
+            contentPadding:
+                const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 16,
+            ),
+
+            border: InputBorder.none,
           ),
         ),
-      ],
-    );
-  }
+                ),
+              ],
+              
+            );
+          }
 
   // Helper Widget untuk Tombol Sosial Media
   Widget _buildSocialButton(

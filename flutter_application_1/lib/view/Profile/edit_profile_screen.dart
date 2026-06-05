@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -11,19 +12,37 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   
-  final TextEditingController _nameController = TextEditingController(text: "Daynova Shava");
-  final TextEditingController _usernameController = TextEditingController(text: "DynvaShv");
-  final TextEditingController _locationController = TextEditingController(text: "Surabaya");
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController(text: "");
+  final TextEditingController _locationController = TextEditingController(text: "");
   final TextEditingController _bioController = TextEditingController(
     text: "Lover of gothic horror and vintage hardcovers. Usually found in a sun-drenched corner with a cup of oolong and a thick novel.",
   );
   final TextEditingController _websiteController = TextEditingController(text: "");
-  final TextEditingController _emailController = TextEditingController(text: "akusapi@gmail.com");
-  final TextEditingController _birthDateController = TextEditingController(text: "12 Desember 2003");
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _birthDateController = TextEditingController();
 
   // Daftar kategori dalam Bahasa Inggris
   final List<String> _categories = ["Horror", "Fiction", "Mystery", "History", "Comic", "Biography", "Romance"];
   final List<String> _selectedCategories = ["Horror", "Mystery"]; 
+
+  @override
+void initState() {
+  super.initState();
+
+  final user =
+      FirebaseAuth.instance.currentUser;
+
+  if (user != null) {
+    _nameController.text =
+        user.email!
+            .split('@')
+            .first;
+
+    _emailController.text =
+        user.email ?? '';
+  }
+}
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(

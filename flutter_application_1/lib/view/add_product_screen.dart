@@ -1,16 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'success_add_product_screen.dart';
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import '../model/book_model.dart';
+import '../viewmodel/book_viewmodel.dart';
 
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
+  
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
 }
 
 class _AddProductScreenState extends State<AddProductScreen> {
+  File? selectedImage;
+
+  final ImagePicker _picker =ImagePicker();
   final TextEditingController titleController = TextEditingController();
   final TextEditingController authorController = TextEditingController();
   final TextEditingController yearController = TextEditingController();
@@ -28,6 +39,93 @@ class _AddProductScreenState extends State<AddProductScreen> {
     "Sekolah",
     "Sejarah"
   ];
+
+  Future<void> pickImage() async {
+  final XFile? image =
+      await _picker.pickImage(
+    source: ImageSource.gallery,
+  );
+
+  if (image != null) {
+    setState(() {
+      selectedImage = File(image.path);
+    });
+  }
+}
+
+Future<void> uploadBook() async {
+if (selectedImage == null) {
+ScaffoldMessenger.of(context).showSnackBar(
+const SnackBar(
+content: Text(
+'Silakan pilih cover buku terlebih dahulu',
+),
+),
+);
+return;
+}
+
+if (titleController.text.trim().isEmpty ||
+authorController.text.trim().isEmpty ||
+priceController.text.trim().isEmpty) {
+ScaffoldMessenger.of(context).showSnackBar(
+const SnackBar(
+content: Text(
+'Lengkapi data buku terlebih dahulu',
+),
+),
+);
+return;
+}
+
+try {
+final bookViewModel =
+context.read<BookViewModel>();
+
+final imageUrl =
+    await bookViewModel.uploadImage(
+  selectedImage!,
+);
+
+final book = BookModel(
+  title: titleController.text.trim(),
+  author: authorController.text.trim(),
+  image: imageUrl,
+  price: priceController.text.trim(),
+  category: selectedCategory,
+  description:
+      descriptionController.text.trim(),
+  rating: 0,
+  storeName: "Booknity Store",
+  year: yearController.text.trim(),
+  isbn: isbnController.text.trim(),
+  condition: selectedCondition,
+);
+
+await bookViewModel.addBook(book);
+
+if (!mounted) return;
+
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (_) =>
+        const SuccessAddProductScreen(),
+  ),
+);
+
+
+} catch (e) {
+ScaffoldMessenger.of(context).showSnackBar(
+SnackBar(
+content: Text(
+'Upload gagal: $e',
+),
+),
+);
+}
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -54,34 +152,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
           children: [
 
             /// IMAGE SECTION
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _imageBox(
-                    width: double.infinity,
-                    height: 220,
-                    large: true,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  children: [
-                    _imageBox(
-                      width: 110,
-                      height: 104,
-                      large: false,
-                    ),
-                    const SizedBox(height: 12),
-                    _imageBox(
-                      width: 110,
-                      height: 104,
-                      large: false,
-                    ),
-                  ],
-                ),
-              ],
+            SizedBox(
+            width: double.infinity,
+            child: GestureDetector(
+              onTap: pickImage,
+              child: _imageBox(
+                width: double.infinity,
+                height: 220,
+                large: true,
+              ),
             ),
+          ),
 
             const SizedBox(height: 28),
 
@@ -228,28 +309,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
             const SizedBox(height: 30),
 
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const SuccessAddProductScreen(),
-                  ),
-                );
-              },
-                child: const Text(
-                  "Unggah Produk",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+          SizedBox(
+          width: double.infinity,
+          height: 60,
+          child: ElevatedButton(
+            onPressed: () {
+              print("TOMBOL DITEKAN");
+            },
+            child: const Text(
+              "Unggah Produk",
             ),
-
+          ),
+        ),
             const SizedBox(height: 16),
 
             const Text.rich(
@@ -275,6 +346,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ),
       ),
     );
+  }
+  @override
+  void dispose() {
+    titleController.dispose();
+    authorController.dispose();
+    yearController.dispose();
+    isbnController.dispose();
+    priceController.dispose();
+    descriptionController.dispose();
+    super.dispose();
   }
 
   Widget _title(String title) {
@@ -318,63 +399,74 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Widget _imageBox({
-  required double width,
-  required double height,
-  bool large = false,
-}) {
-  return Container(
+    required double width,
+    required double height,
+    bool large = false,
+    }) {
+    return Container(
     width: width,
     height: height,
     decoration: BoxDecoration(
-      color: const Color(0xffF7F2EC),
-      borderRadius: BorderRadius.circular(28),
-      border: Border.all(
-        color: const Color(0xffE6DDD5),
-      ),
+    color: const Color(0xffF7F2EC),
+    borderRadius: BorderRadius.circular(28),
+    border: Border.all(
+    color: const Color(0xffE6DDD5),
     ),
-    child: large
-        ? Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: const BoxDecoration(
-                  color: Color(0xffB84A14),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.add_a_photo_outlined,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                "Add Cover Photo",
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xff2B2522),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "Recommended: Bright, natural light",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          )
-        : const Center(
-            child: Icon(
-              Icons.add_a_photo_outlined,
-              size: 28,
-              color: Color(0xffD5C8BF),
-            ),
-          ),
-  );
+    ),
+    child: selectedImage != null && large
+    ? ClipRRect(
+    borderRadius: BorderRadius.circular(28),
+    child: Image.file(
+    selectedImage!,
+    fit: BoxFit.cover,
+    width: width,
+    height: height,
+    ),
+    )
+    : large
+    ? Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+    Container(
+    width: 58,
+    height: 58,
+    decoration: const BoxDecoration(
+    color: Color(0xffB84A14),
+    shape: BoxShape.circle,
+    ),
+    child: const Icon(
+    Icons.add_a_photo_outlined,
+    color: Colors.white,
+    ),
+    ),
+    const SizedBox(height: 16),
+    Text(
+    "Add Cover Photo",
+    style: GoogleFonts.plusJakartaSans(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    color: const Color(0xff2B2522),
+    ),
+    ),
+    const SizedBox(height: 4),
+    Text(
+    "Recommended: Bright, natural light",
+    textAlign: TextAlign.center,
+    style: GoogleFonts.plusJakartaSans(
+    fontSize: 12,
+    color: Colors.grey,
+    ),
+    ),
+    ],
+    )
+    : const Center(
+    child: Icon(
+    Icons.add_a_photo_outlined,
+    size: 28,
+    color: Color(0xffD5C8BF),
+    ),
+    ),
+    );
 }
+
 }

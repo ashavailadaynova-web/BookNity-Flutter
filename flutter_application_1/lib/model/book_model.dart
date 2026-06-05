@@ -1,5 +1,5 @@
 class BookModel {
-  final int id;
+  final String? id;
   final String title;
   final String author;
   final String image;
@@ -9,9 +9,12 @@ class BookModel {
   final double rating;
   final String storeName;
   final bool isFavorite;
+  final String year;
+  final String isbn;
+  final String condition;
 
   const BookModel({
-    required this.id,
+    this.id,
     required this.title,
     required this.author,
     required this.image,
@@ -20,11 +23,14 @@ class BookModel {
     required this.description,
     required this.rating,
     required this.storeName,
+    this.year = '',
+    this.isbn = '',
+    this.condition = '',
     this.isFavorite = false,
   });
 
   BookModel copyWith({
-    int? id,
+    String? id,
     String? title,
     String? author,
     String? image,
@@ -34,6 +40,9 @@ class BookModel {
     double? rating,
     String? storeName,
     bool? isFavorite,
+    String? year,
+    String? isbn,
+    String? condition,
   }) {
     return BookModel(
       id: id ?? this.id,
@@ -46,6 +55,47 @@ class BookModel {
       rating: rating ?? this.rating,
       storeName: storeName ?? this.storeName,
       isFavorite: isFavorite ?? this.isFavorite,
+      year: year ?? this.year,
+      isbn: isbn ?? this.isbn,
+      condition: condition ?? this.condition,
     );
+  }
+
+  factory BookModel.fromMap(
+    Map<String, dynamic> map,
+    String documentId,
+  ) {
+    return BookModel(
+      id: documentId,
+      title: map['title'] ?? '',
+      author: map['author'] ?? '',
+      image: map['image'] ?? '',
+      price: map['price'] ?? '',
+      category: map['category'] ?? '',
+      description: map['description'] ?? '',
+      rating: (map['rating'] ?? 0).toDouble(),
+      storeName: map['storeName'] ?? '',
+      isFavorite: map['isFavorite'] ?? false,
+      year: map['year'] ?? '',
+      isbn: map['isbn'] ?? '',
+      condition: map['condition'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'author': author,
+      'image': image,
+      'price': price,
+      'category': category,
+      'description': description,
+      'rating': rating,
+      'storeName': storeName,
+      'isFavorite': isFavorite,
+      'year': year,
+      'isbn': isbn,
+      'condition': condition,
+    };
   }
 }
