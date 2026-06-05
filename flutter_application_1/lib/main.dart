@@ -1,70 +1,48 @@
 import 'dart:async'; // Ditambahkan agar objek 'Timer' tidak error lagi
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
-import 'main_screen.dart';
-// --- BAGIAN IMPORT YANG SUDAH DISATUKAN ---
-// Menggunakan struktur folder sub-direktori milikmu agar file terarah dengan rapi
-import 'view/Login Register/splash_screen.dart';
-import 'view/Login Register/onboarding_splash.dart';
-import 'view/Login Register/onboarding2_splash.dart';
-import 'view/Login Register/onboarding3_splash.dart';
-import 'view/Login Register/login_screen.dart';
-import 'view/Login Register/register_screen.dart';
-=======
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
-// --- BAGIAN IMPORT ONBOARDING & LOGIN (SUDAH DIPERBAIKI) ---
+// --- BAGIAN IMPORT UTAMA & LAYOUT ---
+import 'package:flutter_application_1/main_screen.dart';
+
+// --- BAGIAN IMPORT ONBOARDING & LOGIN ---
 import 'package:flutter_application_1/view/Login%20Register/splash_screen.dart';
 import 'package:flutter_application_1/view/Login%20Register/onboarding_splash.dart';
 import 'package:flutter_application_1/view/Login%20Register/onboarding2_splash.dart';
 import 'package:flutter_application_1/view/Login%20Register/onboarding3_splash.dart';
 import 'package:flutter_application_1/view/Login%20Register/login_screen.dart';
 import 'package:flutter_application_1/view/Login%20Register/register_screen.dart';
->>>>>>> 8b43274f17ee247045659b4156671098a1111d04
 
-// Mengimpor halaman utama & fitur baru dari tim kelompok
-import 'view/Beranda/home_screen.dart';
-import 'view/Profile/profile_screen.dart';
-import 'view/Profile/help_center_screen.dart';
-import 'view/Notifikasi/notifikasi_screen.dart';
-import 'view/Pesanan/payment_screen.dart';
-import 'view/product_detail_screen.dart';
-import 'viewmodel/book_viewmodel.dart';
-import 'viewmodel/pesanan_view_model.dart';
-import 'viewmodel/auth_viewmodel.dart';
-import 'viewmodel/user_viewmodel.dart';
+// --- BAGIAN IMPORT FITUR TIM KELOMPOK (ABSOLUTE PATH) ---
+import 'package:flutter_application_1/view/Beranda/home_screen.dart';
+import 'package:flutter_application_1/view/Profile/profile_screen.dart';
+import 'package:flutter_application_1/view/Profile/help_center_screen.dart';
+import 'package:flutter_application_1/view/Notifikasi/notifikasi_screen.dart';
+import 'package:flutter_application_1/view/Pesanan/payment_screen.dart';
+import 'package:flutter_application_1/view/product_detail_screen.dart';
 
-void main() async { 
-  WidgetsFlutterBinding.ensureInitialized(); 
-  await Firebase.initializeApp(); 
-  
+// --- BAGIAN IMPORT VIEWMODEL ---
+import 'package:flutter_application_1/viewmodel/book_viewmodel.dart';
+import 'package:flutter_application_1/viewmodel/pesanan_view_model.dart';
+import 'package:flutter_application_1/viewmodel/auth_viewmodel.dart';
+import 'package:flutter_application_1/viewmodel/user_viewmodel.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
   runApp(
-  MultiProvider(
-    providers: [
-
-      ChangeNotifierProvider(
-        create: (_) => PesananViewModel(),
-      ),
-
-      ChangeNotifierProvider(
-        create: (_) => BookViewModel(),
-      ),
-
-      ChangeNotifierProvider(
-        create: (_) => AuthViewModel(),
-      ),
-
-      ChangeNotifierProvider(
-      create: (_) => UserViewModel(),
-      ),
-
-    ],
-
-    child: const MyApp(),
-  ),
-);
- 
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PesananViewModel()),
+        ChangeNotifierProvider(create: (_) => BookViewModel()),
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => UserViewModel()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -75,29 +53,27 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Booknity',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-      ), 
+      theme: ThemeData(useMaterial3: true),
       home: const SplashScreen(),
 
       // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
-     routes: {
-  '/main': (context) => const MainScreen(),
-  '/onboarding_container': (context) => const MainOnboardingContainer(),
-  '/login': (context) => const LoginScreen(),
-  '/register': (context) => const RegisterScreen(),
-  '/home': (context) => const HomeScreen(),
-  '/profile': (context) => const ProfileScreen(),
-  '/help_center': (context) => const HelpCenterScreen(),
-  '/notification': (context) => const NotificationScreen(),
-},
+      routes: {
+        '/main': (context) => const MainScreen(),
+        '/onboarding_container': (context) => const MainOnboardingContainer(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/help_center': (context) => const HelpCenterScreen(),
+        '/notification': (context) => const NotificationScreen(),
+      },
     );
   }
 }
 
 // Container Utama untuk menggeser halaman Onboarding secara otomatis/manual
 class MainOnboardingContainer extends StatefulWidget {
-  const MainOnboardingContainer({super.key}); // 👈 REVISI: Menggunakan format super.key yang modern
+  const MainOnboardingContainer({super.key});
 
   @override
   State<MainOnboardingContainer> createState() =>
@@ -153,10 +129,10 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
             _currentPage = page;
           });
         },
-        children: [
-OnboardingScreen(), // Halaman 1
-OnboardingScreen2(), // Halaman 2 (sementara)
-OnboardingScreen3(), // Halaman 3 (sementara)
+        children: const [
+          OnboardingScreen(), // Halaman 1
+          OnboardingScreen2(), // Halaman 2
+          OnboardingScreen3(), // Halaman 3
         ],
       ),
     );

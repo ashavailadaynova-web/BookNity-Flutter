@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../model/chat_model.dart';
+import '../../model/chat_model.dart';
+import '../../viewmodel/chat_viewmodel.dart'; // Sesuaikan folder Controller timmu
 
 class ChatRoomScreen extends StatefulWidget {
-  const ChatRoomScreen({super.key});
+  final String roomId;
+  final String currentUserId;
+
+  const ChatRoomScreen({
+    super.key,
+    this.roomId = "room_dummy_1",
+    this.currentUserId = "user_pembeli",
+  });
 
   @override
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
@@ -11,6 +19,39 @@ class ChatRoomScreen extends StatefulWidget {
 
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final TextEditingController controller = TextEditingController();
+  final ChatViewModel _chatViewModel = ChatViewModel(); // Menggunakan class ViewModel Inez
+
+  // --- REPARASI LIST MOCKUP BIAR TIDAK MERAH LAGI ---
+  List<MessageModel> get _defaultMockupMessages => [
+        MessageModel(
+          id: 'm1',
+          senderId: widget.currentUserId,
+          message: '', // Kosong karena ini tipe kartu penawaran
+          timestamp: DateTime.now(),
+          type: MessageType.offerPending,
+          time: "10:45 AM",
+          bookTitle: "Laut Bercerita",
+          author: "Leila S Chudori",
+          price: "55.000",
+          cover: "https://covers.openlibrary.org/b/id/14613167-L.jpg",
+        ),
+        MessageModel(
+          id: 'm2',
+          senderId: "other_user",
+          message: "Mohon tunggu respon penawaran dari penjual",
+          timestamp: DateTime.now(),
+          type: MessageType.text,
+          time: "10:46 AM",
+        ),
+        MessageModel(
+          id: 'm3',
+          senderId: "other_user",
+          message: "Halo kak, terima kasih sudah berkunjung di Toko kami.",
+          timestamp: DateTime.now(),
+          type: MessageType.text,
+          time: "11:00 AM",
+        ),
+      ];
 
   void _showMediaMenu() {
     showModalBottomSheet(
@@ -27,38 +68,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  leading: const Icon(
-                    Icons.camera_alt,
-                    color: Color(0xff4A241B),
-                  ),
-                  title: Text(
-                    "Ambil Foto",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-
-                    /// nanti controller kamera
-                  },
+                  leading: const Icon(Icons.camera_alt, color: Color(0xff4A241B)),
+                  title: Text("Ambil Foto", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+                  onTap: () => Navigator.pop(context),
                 ),
                 ListTile(
-                  leading: const Icon(
-                    Icons.photo_library,
-                    color: Color(0xff4A241B),
-                  ),
-                  title: Text(
-                    "Pilih dari Galeri",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-
-                    /// nanti controller galeri
-                  },
+                  leading: const Icon(Icons.photo_library, color: Color(0xff4A241B)),
+                  title: Text("Pilih dari Galeri", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+                  onTap: () => Navigator.pop(context),
                 ),
               ],
             ),
@@ -68,45 +85,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  final List<MessageModel> messages = [
-    MessageModel(
-      type: MessageType.offerPending,
-      isMe: true,
-      time: "10:45 AM",
-      bookTitle: "Laut Bercerita",
-      author: "Leila S Chudori",
-      price: "55.000",
-      cover: "https://covers.openlibrary.org/b/id/14613167-L.jpg",
-    ),
-    MessageModel(
-      text: "Mohon tunggu respon penawaran dari penjual",
-      isMe: false,
-      time: "10:46 AM",
-    ),
-    MessageModel(
-      text:
-          "Halo kak, terima kasih sudah berkunjung di Toko kami. Untuk tawaran buku Laut Bercerita kami terima ya.",
-      isMe: false,
-      time: "11:00 AM",
-    ),
-    MessageModel(
-      type: MessageType.offerAccepted,
-      isMe: false,
-      time: "11:00 AM",
-      bookTitle: "Laut Bercerita",
-      author: "Leila S Chudori",
-      price: "55.000",
-      cover: "https://covers.openlibrary.org/b/id/14613167-L.jpg",
-    ),
-    MessageModel(
-      text: "Hai Kak Aceng, baik saya akan melanjutkan ke pembayaran",
-      isMe: true,
-      time: "11:12 AM",
-    ),
-  ];
+  void _actionSendMessage() {
+    if (controller.text.trim().isEmpty) return;
+    _chatViewModel.sendMessage(
+      roomId: widget.roomId,
+      senderId: widget.currentUserId,
+      messageText: controller.text, // <--- UBAH 'text:' MENJADI 'messageText:'
+    );
+    
+    controller.clear();
+  }
 
-  // Fungsi khusus untuk merender komponen bubble chat khusus penawaran (Custom Offer Cards)
   Widget _buildCustomOfferMessage(MessageModel message) {
+    String currentCover = message.cover ?? "https://covers.openlibrary.org/b/id/14613167-L.jpg";
+    String currentTitle = message.bookTitle ?? "Laut Bercerita";
+    String currentAuthor = message.author ?? "Leila S Chudori";
+    String currentPrice = message.price ?? "55.000";
+
     if (message.type == MessageType.offerPending) {
       return Container(
         width: 215,
@@ -121,12 +116,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                message.cover ?? '',
+                currentCover,
                 width: 55,
                 height: 75,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.book, size: 55),
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 55),
               ),
             ),
             const SizedBox(width: 10),
@@ -136,45 +130,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 children: [
                   Text(
                     "MENUNGGU PENAWARAN",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xffC45A1A),
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w800, color: const Color(0xffC45A1A)),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     "Penawaran kamu",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      color: const Color(0xffC45A1A),
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xffC45A1A), fontWeight: FontWeight.w600),
                   ),
                   Text(
-                    message.bookTitle ?? '',
+                    currentTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
-                  Text(
-                    "oleh ${message.author ?? ''}",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      color: Colors.black54,
-                    ),
-                  ),
+                  Text("oleh $currentAuthor", style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.black54)),
                   const SizedBox(height: 4),
-                  Text(
-                    "Rp. ${message.price ?? ''}",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  Text("Rp. $currentPrice", style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
@@ -195,11 +166,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           children: [
             Text(
               "PENAWARAN DITERIMA",
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xffC45A1A),
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xffC45A1A)),
             ),
             const SizedBox(height: 10),
             Row(
@@ -207,12 +174,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    message.cover ?? '',
+                    currentCover,
                     width: 50,
                     height: 70,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.book, size: 50),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -220,33 +185,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Dengan Penawaran",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          color: const Color(0xffC45A1A),
-                        ),
-                      ),
-                      Text(
-                        message.bookTitle ?? '',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        "oleh ${message.author ?? ''}",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      Text(
-                        "Rp. ${message.price ?? ''}",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
-                      ),
+                      Text("With Offer", style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xffC45A1A))),
+                      Text(currentTitle, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                      Text("oleh $currentAuthor", style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.black54)),
+                      Text("Rp. $currentPrice", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18)),
                     ],
                   ),
                 ),
@@ -261,17 +203,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
                   backgroundColor: const Color(0xffB64B1E),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 ),
                 child: Text(
-                  "Lanjutkan Pembayaran",
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+                  "Continue to Payment",
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
               ),
             ),
@@ -279,17 +215,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         ),
       );
     }
-
-    // Default fallback jika tipenya tidak dikenal (mengurangi risiko crash/error)
     return const SizedBox.shrink();
   }
 
   @override
   Widget build(BuildContext context) {
+    bool checkIsMe(MessageModel msg) {
+      if (msg.id.startsWith('m')) {
+        return msg.senderId == widget.currentUserId;
+      }
+      return msg.isMe;
+    }
+
     return Scaffold(
-      backgroundColor: const Color(
-        0xffF9F6EE,
-      ), // Menambahkan background scaffold agar serasi
+      backgroundColor: const Color(0xffF9F6EE),
       appBar: AppBar(
         title: const Text("Chat Room"),
         backgroundColor: const Color(0xff4A241B),
@@ -298,8 +237,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       body: Column(
         children: [
           const SizedBox(height: 10),
-
-          /// DATE
           Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
@@ -318,10 +255,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
-          /// PRODUCT CARD AT TOP
           Align(
             alignment: Alignment.centerLeft,
             child: Container(
@@ -348,42 +282,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Produk kamu",
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xffD36A1D),
-                          ),
-                        ),
+                        Text("Produk kamu", style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xffD36A1D))),
                         const SizedBox(height: 2),
-                        Text(
-                          "Teka Teki Rumah Aneh",
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xff2D2D2D),
-                          ),
-                        ),
+                        Text("Teka Teki Rumah Aneh", maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xff2D2D2D))),
                         const SizedBox(height: 2),
-                        Text(
-                          "Oleh Uketsu",
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 10,
-                            color: const Color(0xff777777),
-                          ),
-                        ),
+                        Text("Oleh Uketsu", style: GoogleFonts.plusJakartaSans(fontSize: 10, color: const Color(0xff777777))),
                         const SizedBox(height: 2),
-                        Text(
-                          "Rp. 45.000",
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xff2D2D2D),
-                          ),
-                        ),
+                        Text("Rp. 45.000", style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xff2D2D2D))),
                       ],
                     ),
                   ),
@@ -391,71 +296,59 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 18),
-
-          /// MESSAGES LISTVIEW
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                bool isOffer =
-                    message.type == MessageType.offerPending ||
-                    message.type == MessageType.offerAccepted;
+            child: StreamBuilder<List<MessageModel>>(
+              stream: _chatViewModel.streamMessages(widget.roomId, widget.currentUserId),
+              initialData: _defaultMockupMessages, // Menampilkan data bawaan jika Firebase kosong
+              builder: (context, snapshot) {
+                final firebaseMessages = snapshot.data ?? _defaultMockupMessages;
 
-                return Align(
-                  alignment: message.isMe
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment: message.isMe
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    children: [
-                      // Logika Pemisahan Render Chat Bubble
-                      isOffer
-                          ? _buildCustomOfferMessage(message)
-                          : Container(
-                              constraints: const BoxConstraints(maxWidth: 260),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: message.isMe
-                                    ? const Color(0xff4A241B)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              child: Text(
-                                message.text ?? '',
-                                style: GoogleFonts.plusJakartaSans(
-                                  color: message.isMe
-                                      ? Colors.white
-                                      : Colors.black,
-                                  fontSize: 14,
+                return ListView.builder(
+                  reverse: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: firebaseMessages.length,
+                  itemBuilder: (context, index) {
+                    final message = firebaseMessages[index];
+                    bool isOffer = message.type == MessageType.offerPending || message.type == MessageType.offerAccepted;
+                    bool itemIsMe = checkIsMe(message);
+
+                    return Align(
+                      alignment: itemIsMe ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: itemIsMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        children: [
+                          isOffer
+                              ? _buildCustomOfferMessage(message)
+                              : Container(
+                                  constraints: const BoxConstraints(maxWidth: 260),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: itemIsMe ? const Color(0xff4A241B) : Colors.white,
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: Text(
+                                    message.message, // Menampilkan field .message sesuai model kamu
+                                    style: GoogleFonts.plusJakartaSans(
+                                      color: itemIsMe ? Colors.white : Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                      const SizedBox(height: 6),
-                      Text(
-                        message.time,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10,
-                          color: const Color(0xffB4AEA8),
-                        ),
+                          const SizedBox(height: 6),
+                          Text(
+                            message.time, // Menampilkan teks jam desaimu
+                            style: GoogleFonts.plusJakartaSans(fontSize: 10, color: const Color(0xffB4AEA8)),
+                          ),
+                          const SizedBox(height: 18),
+                        ],
                       ),
-                      const SizedBox(height: 18),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),
           ),
-
-          /// INPUT CHAT BAR
           Container(
             margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -464,11 +357,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
+                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4)),
               ],
             ),
             child: Row(
@@ -484,27 +373,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: "Type a message...",
-                      hintStyle: GoogleFonts.plusJakartaSans(
-                        fontSize: 14,
-                   
-                        color: const Color(0xffB6B6B6),
-                      ),
+                      hintStyle: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xffB6B6B6)),
                     ),
+                    onSubmitted: (_) => _actionSendMessage(),
                   ),
                 ),
-                const Icon(
-                  Icons.emoji_emotions_outlined,
-                  color: Color(0xff5A4038),
-                ),
+                const Icon(Icons.emoji_emotions_outlined, color: Color(0xff5A4038)),
                 const SizedBox(width: 8),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xff4A241B),
-                    shape: BoxShape.circle,
+                GestureDetector(
+                  onTap: _actionSendMessage,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(color: Color(0xff4A241B), shape: BoxShape.circle),
+                    child: const Icon(Icons.send, size: 18, color: Colors.white),
                   ),
-                  child: const Icon(Icons.send, size: 18, color: Colors.white),
                 ),
               ],
             ),

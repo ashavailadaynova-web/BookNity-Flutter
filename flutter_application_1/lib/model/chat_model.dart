@@ -1,18 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Gunakan nama enum agar sesuai logika tipe data buatanmu
 enum MessageType { text, offerPending, offerAccepted }
 
 class MessageModel {
   final String id;
   final String senderId;
-  final String message;
+  final String message; // Tetap menggunakan nama 'message' sesuai keinginanmu
   final DateTime timestamp;
   final MessageType type;
   final bool isMe;
-  final String time; // Untuk fallback format jam desaimu
+  final String time; 
 
-  // Field opsional penunjang kartu penawaran (Custom Offer Card) bawaan desaimu
   final String? bookTitle;
   final String? author;
   final String? price;
@@ -32,24 +30,30 @@ class MessageModel {
     this.cover,
   });
 
-  // Membaca data real-time dari Firebase Firestore
   factory MessageModel.fromFirestore(DocumentSnapshot doc, String currentUserId) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     
-    // Logika penentuan MessageType berdasarkan string di Firebase
     MessageType msgType = MessageType.text;
     if (data['type'] == 'offerPending') msgType = MessageType.offerPending;
     if (data['type'] == 'offerAccepted') msgType = MessageType.offerAccepted;
 
     String sId = data['senderId'] ?? '';
+    DateTime tStamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+
+    // Otomatis generate teks waktu desaimu dari timestamp Firebase
+    String minute = tStamp.minute.toString().padLeft(2, '0');
+    String period = tStamp.hour >= 12 ? "PM" : "AM";
+    int displayHour = tStamp.hour > 12 ? tStamp.hour - 12 : (tStamp.hour == 0 ? 12 : tStamp.hour);
+    String formattedTime = "${displayHour.toString().padLeft(2, '0')}:$minute $period";
 
     return MessageModel(
       id: doc.id,
       senderId: sId,
       message: data['message'] ?? '',
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      timestamp: tStamp,
       type: msgType,
-      isMe: sId == currentUserId, // Otomatis menentukan bubble kanan/kiri
+      isMe: sId == currentUserId, 
+      time: data['time'] ?? formattedTime,
       bookTitle: data['bookTitle'],
       author: data['author'],
       price: data['price'],
@@ -57,13 +61,13 @@ class MessageModel {
     );
   }
 
-  // Mengubah objek menjadi Map untuk dikirim ke Firebase
   Map<String, dynamic> toFirestore() {
     return {
       'senderId': senderId,
       'message': message,
       'timestamp': Timestamp.fromDate(timestamp),
-      'type': type.name, // Menyimpan dalam bentuk string ('text', 'offerPending', 'offerAccepted')
+      'type': type.name, 
+      'time': time,
       'bookTitle': bookTitle,
       'author': author,
       'price': price,
