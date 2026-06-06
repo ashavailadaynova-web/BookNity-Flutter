@@ -11,64 +11,7 @@ class ChatRoomScreen extends StatefulWidget {
 
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final TextEditingController controller = TextEditingController();
-
-  void _showMediaMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 16,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(
-                    Icons.camera_alt,
-                    color: Color(0xff4A241B),
-                  ),
-                  title: Text(
-                    "Ambil Foto",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    /// nanti controller kamera
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.photo_library,
-                    color: Color(0xff4A241B),
-                  ),
-                  title: Text(
-                    "Pilih dari Galeri",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    /// nanti controller galeri
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  final ScrollController _scrollController = ScrollController();
 
   final List<MessageModel> messages = [
     MessageModel(
@@ -86,7 +29,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       time: "10:46 AM",
     ),
     MessageModel(
-      text: "Halo kak, terima kasih sudah berkunjung di Toko kami. Untuk tawaran buku Laut Bercerita kami terima ya.",
+      text:
+          "Halo kak, terima kasih sudah berkunjung di Toko kami. Untuk tawaran buku Laut Bercerita kami terima ya.",
       isMe: false,
       time: "11:00 AM",
     ),
@@ -106,7 +50,111 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     ),
   ];
 
-  // Fungsi khusus untuk merender komponen bubble chat khusus penawaran (Custom Offer Cards)
+  @override
+  void initState() {
+    super.initState();
+    // Berikan sedikit delay agar ListView selesai dirender sebelum scroll ke bawah
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scrollToBottom(animated: false),
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom({bool animated = true}) {
+    if (_scrollController.hasClients) {
+      if (animated) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    }
+  }
+
+  void _sendMessage() {
+    final text = controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      messages.add(
+        MessageModel(
+          text: text,
+          isMe: true,
+          time: "11:13 AM", // Nanti bisa disesuaikan dengan format waktu asli
+        ),
+      );
+    });
+
+    controller.clear();
+    // Pemicu scroll otomatis ke bawah setelah frame pesan baru selesai dirender
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  void _showMediaMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(
+                    Icons.camera_alt,
+                    color: Color(0xff4A241B),
+                  ),
+                  title: Text(
+                    "Ambil Foto",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+
+                    /// nanti fungsi kamera
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo_library,
+                    color: Color(0xff4A241B),
+                  ),
+                  title: Text(
+                    "Pilih dari Galeri",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+
+                    /// nanti fungsi galeri
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildCustomOfferMessage(MessageModel message) {
     if (message.type == MessageType.offerPending) {
       return Container(
@@ -126,7 +174,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 width: 55,
                 height: 75,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 55),
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.book, size: 55),
               ),
             ),
             const SizedBox(width: 10),
@@ -211,7 +260,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     width: 50,
                     height: 70,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 50),
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.book, size: 50),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -279,14 +329,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
     }
 
-    // Default fallback jika tipenya tidak dikenal (mengurangi risiko crash/error)
     return const SizedBox.shrink();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF9F6EE), // Menambahkan background scaffold agar serasi
+      backgroundColor: const Color(0xffF9F6EE),
       appBar: AppBar(
         title: const Text("Chat Room"),
         backgroundColor: const Color(0xff4A241B),
@@ -299,10 +348,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           /// DATE
           Center(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 6,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
               decoration: BoxDecoration(
                 color: const Color(0xffEFE7D7),
                 borderRadius: BorderRadius.circular(20),
@@ -397,39 +443,45 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           /// MESSAGES LISTVIEW
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-              ),
+              controller:
+                  _scrollController, // ScrollController dipasang di sini
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 final message = messages[index];
-                bool isOffer = message.type == MessageType.offerPending ||
+                bool isOffer =
+                    message.type == MessageType.offerPending ||
                     message.type == MessageType.offerAccepted;
 
                 return Align(
-                  alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment: message.isMe
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Column(
-                    crossAxisAlignment: message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                    crossAxisAlignment: message.isMe
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
                     children: [
-                      // Logika Pemisahan Render Chat Bubble
                       isOffer
                           ? _buildCustomOfferMessage(message)
                           : Container(
-                              constraints: const BoxConstraints(
-                                maxWidth: 260,
-                              ),
+                              constraints: const BoxConstraints(maxWidth: 260),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: message.isMe ? const Color(0xff4A241B) : Colors.white,
+                                color: message.isMe
+                                    ? const Color(0xff4A241B)
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: Text(
                                 message.text ?? '',
                                 style: GoogleFonts.plusJakartaSans(
-                                  color: message.isMe ? Colors.white : Colors.black,
+                                  color: message.isMe
+                                      ? Colors.white
+                                      : Colors.black,
                                   fontSize: 14,
                                 ),
                               ),
@@ -460,9 +512,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: 0.08,
-                  ),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -472,15 +522,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               children: [
                 GestureDetector(
                   onTap: _showMediaMenu,
-                  child: const Icon(
-                    Icons.add,
-                    color: Color(0xff5A4038),
-                  ),
+                  child: const Icon(Icons.add, color: Color(0xff5A4038)),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
                     controller: controller,
+                    onSubmitted: (_) =>
+                        _sendMessage(), // Bisa kirim via tombol 'enter/done' keyboard
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: "Type a message...",
@@ -496,17 +545,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   color: Color(0xff5A4038),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xff4A241B),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.send,
-                    size: 18,
-                    color: Colors.white,
+                InkWell(
+                  onTap: _sendMessage, // Fungsi kirim saat icon send diklik
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: Color(0xff4A241B),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.send,
+                      size: 18,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],

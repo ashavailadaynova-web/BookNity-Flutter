@@ -23,6 +23,7 @@ import 'viewmodel/book_viewmodel.dart';
 import 'viewmodel/pesanan_view_model.dart';
 import 'viewmodel/auth_viewmodel.dart';
 import 'viewmodel/user_viewmodel.dart';
+import 'viewmodel/chat_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
 
         ChangeNotifierProvider(create: (_) => UserViewModel()),
+
+        ListenableProvider<ChatViewModel>(create: (_) => ChatViewModel()),
       ],
 
       child: const MyApp(),
