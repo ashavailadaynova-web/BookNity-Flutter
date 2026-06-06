@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/gestures.dart';
 import 'login_screen.dart';
-
-// Sesuaikan jumlah "../" dengan struktur folder proyekmu ya!
+import 'package:provider/provider.dart';
+import '../../main_screen.dart';
+import '../../viewmodel/auth_viewmodel.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -17,6 +19,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  bool _isPasswordHidden = true;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -25,13 +29,111 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  // 🟢 FUNGSI UNTUK MENAMPILKAN POP-UP TERMS & CONDITIONS
+  void _showTermsAndConditionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFFFFDF2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Terms & Conditions',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF8F4F17),
+            ),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '1. Penggunaan Layanan',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF42210B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Dengan mendaftar, Anda setuju untuk menggunakan aplikasi penjelajah buku ini dengan bijak dan mematuhi seluruh hukum yang berlaku.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      color: const Color(0xFF6B4E37),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '2. Privasi Akun',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF42210B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Kami berkomitmen menjaga kerahasiaan data pribadi Anda. Password Anda dienkripsi dengan aman melalui sistem integrasi Firebase Firebase Auth.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      color: const Color(0xFF6B4E37),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '3. Hak Kekayaan Intelektual',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF42210B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Seluruh konten informasi buku, cover, dan data yang disajikan dilindungi oleh hak cipta penerbit masing-masing.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      color: const Color(0xFF6B4E37),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8F4F17),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(
+                'Saya Mengerti',
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDF2), // Background krem lembut
       body: Stack(
         children: [
-          // 1. Elemen Lingkaran Gradien di Atas (Posisi menyesuaikan gambar)
+          // 1. Elemen Lingkaran Gradien di Atas
           Positioned(
             top: -220,
             right: -100,
@@ -157,6 +259,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 fontWeight: FontWeight.w600,
                                 decoration: TextDecoration.underline,
                               ),
+                              // Menggunakan TapGestureRecognizer agar teks bisa merespon sentuhan
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  _showTermsAndConditionsDialog();
+                                },
                             ),
                           ],
                         ),
@@ -165,24 +272,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Tombol Sign In (Sesuai teks di tombol gambar kamu)
+                  // Tombol Sign In (Manual Register)
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () async {
-                        // 1. Tampilkan Loading Indikator
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) => const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF8F4F17),
+                        if (!_isAgreed) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Setujui syarat dan ketentuan terlebih dahulu',
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                          return;
+                        }
 
+                        if (_nameController.text.trim().isEmpty ||
+                            _emailController.text.trim().isEmpty ||
+                            _passwordController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Lengkapi semua data terlebih dahulu',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        final authViewModel = context.read<AuthViewModel>();
+
+                        final success = await authViewModel.register(
+                          name: _nameController.text.trim(),
+                          email: _emailController.text.trim(),
+                          password: _passwordController.text.trim(),
+                        );
+
+                        if (!mounted) return;
+
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Registrasi berhasil'),
+                            ),
+                          );
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Registrasi gagal')),
+                          );
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF8F4F17),
                         shape: RoundedRectangleBorder(
@@ -191,7 +339,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        'Sign In', // Sesuai desain Figma kamu
+                        'Sign In',
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -231,23 +379,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Tombol Media Sosial
+                  // Tombol Media Sosial (Google & Lainnya)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.facebook,
-                        size: 32,
-                        color: Color(0xFF1877F2),
-                      ),
-                      const Icon(
-                        Icons.g_mobiledata,
-                        size: 45,
-                        color: Colors.orange,
-                      ),
+                      // 🟢 TOMBOL GOOGLE REGISTER AKTIF
+                      GestureDetector(
+                        onTap: () async {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF8F4F17),
+                              ),
+                            ),
+                          );
 
-                      const SizedBox(width: 25),
-                      const Icon(Icons.apple, size: 32, color: Colors.black),
+                          final authViewModel = context.read<AuthViewModel>();
+                          final success = await authViewModel.loginWithGoogle();
+
+                          if (!mounted) return;
+                          Navigator.pop(context);
+
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Registrasi via Google Berhasil!',
+                                ),
+                              ),
+                            );
+
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MainScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Gagal melakukan Registrasi dengan Google',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: Image.asset(
+                          'assets/google.png',
+                          width: 32,
+                          height: 32,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 40),
@@ -266,7 +452,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          Navigator.pop(context); // Kembali ke halaman Login
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
                         },
                         child: Text(
                           'Log In',
@@ -317,13 +508,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           child: TextField(
             controller: controller,
-            obscureText: isPassword,
+            obscureText: isPassword ? _isPasswordHidden : false,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.montserrat(
                 color: const Color(0xFFB3A699),
                 fontSize: 14,
               ),
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        _isPasswordHidden
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordHidden = !_isPasswordHidden;
+                        });
+                      },
+                    )
+                  : null,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 24,
                 vertical: 16,

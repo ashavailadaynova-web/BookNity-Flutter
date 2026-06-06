@@ -2,20 +2,37 @@ class UserModel {
   final String uid;
   final String name;
   final String email;
+  final String bio;
+  final String location;
+  final String website;
 
-  UserModel({required this.uid, required this.name, required this.email});
+  const UserModel({
+    required this.uid,
+    required this.name,
+    required this.email,
+    this.bio = '',
+    this.location = '',
+    this.website = '',
+  });
 
-  // 🟢 Memetakan data dari dokumen Cloud Firestore ke Objek Dart
-  factory UserModel.fromJson(Map<String, dynamic> json) {
+  factory UserModel.fromMap(Map<String, dynamic> map, String uid) {
     return UserModel(
-      uid: json['uid'] ?? '',
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
+      uid: uid,
+      name: map['name'] ?? '',
+      email: map['email'] ?? '',
+      bio: map['bio'] ?? '',
+      location: map['location'] ?? '',
+      website: map['website'] ?? '',
     );
   }
 
-  // 🟢 Mengubah objek Dart menjadi JSON untuk dikirim ke database Cloud Firestore
-  Map<String, dynamic> toJson() {
-    return {'uid': uid, 'name': name, 'email': email};
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'email': email,
+      'bio': bio,
+      'location': location,
+      'website': website,
+    };
   }
 }

@@ -1,38 +1,81 @@
-import 'dart:async';
+import 'dart:async'; // Ditambahkan agar objek 'Timer' tidak error lagi
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 
-// Mengimpor semua halaman dari folder view
-import 'view/splash_screen.dart';
-import 'view/onboarding_splash.dart';
-import 'view/onboarding2_splash.dart';
-import 'view/onboarding3_splash.dart';
-import 'view/login_screen.dart';
-import 'view/register_screen.dart';
-import 'view/home_screen.dart';
-import 'view/notifikasi_screen.dart';
-import 'view/payment_screen.dart';
+// --- BAGIAN IMPORT ONBOARDING & LOGIN (SUDAH DIPERBAIKI) ---
+import 'package:flutter_application_1/view/Login%20Register/splash_screen.dart';
+import 'package:flutter_application_1/view/Login%20Register/onboarding_splash.dart';
+import 'package:flutter_application_1/view/Login%20Register/onboarding2_splash.dart';
+import 'package:flutter_application_1/view/Login%20Register/onboarding3_splash.dart';
+import 'package:flutter_application_1/view/Login%20Register/login_screen.dart';
+import 'package:flutter_application_1/view/Login%20Register/register_screen.dart';
+
+// Mengimpor halaman utama & fitur baru dari tim kelompok
+import 'main_screen.dart';
+import 'view/Beranda/home_screen.dart';
+import 'view/Profile/profile_screen.dart';
+import 'view/Profile/help_center_screen.dart';
+import 'view/Notifikasi/notifikasi_screen.dart';
+import 'view/Pesanan/payment_screen.dart';
+import 'view/product_detail_screen.dart';
+import 'viewmodel/book_viewmodel.dart';
+import 'viewmodel/pesanan_view_model.dart';
+import 'viewmodel/auth_viewmodel.dart';
+import 'viewmodel/user_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  await Firebase.initializeApp();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PesananViewModel()),
+
+        ChangeNotifierProvider(create: (_) => BookViewModel()),
+
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+
+        ChangeNotifierProvider(create: (_) => UserViewModel()),
+      ],
+
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
+    return MaterialApp(
       title: 'Booknity',
-      home: PaymentScreen(),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(useMaterial3: true),
+      home: const SplashScreen(),
+
+      // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
+      routes: {
+        '/main': (context) => const MainScreen(),
+        '/onboarding_container': (context) => const MainOnboardingContainer(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/help_center': (context) => const HelpCenterScreen(),
+        '/notification': (context) => const NotificationScreen(),
+      },
     );
   }
 }
 
 // Container Utama untuk menggeser halaman Onboarding secara otomatis/manual
 class MainOnboardingContainer extends StatefulWidget {
-  const MainOnboardingContainer({Key? key}) : super(key: key);
+  const MainOnboardingContainer({
+    super.key,
+  }); // 👈 REVISI: Menggunakan format super.key yang modern
 
   @override
   State<MainOnboardingContainer> createState() =>
@@ -62,11 +105,9 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
         }
       } else {
         // Jika sudah di halaman onboarding terakhir (ke-3), matikan timer
-        // dan langsung pindah ke halaman LoginScreen secara otomatis
+        // dan langsung pindah ke halaman RegisterScreen secara otomatis
         _onboardingTimer?.cancel();
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const RegisterScreen()),
-        );
+        Navigator.of(context).pushReplacementNamed('/login');
       }
     });
   }
@@ -88,10 +129,10 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
             _currentPage = page;
           });
         },
-        children: const [
-          OnboardingScreen(), // Halaman 1 (Curated for you)
-          OnboardingScreen2(), // Halaman 2 (Discover your next read)
-          OnboardingScreen3(), // Halaman 3 (Buy and Sell)
+        children: [
+          OnboardingScreen(), // Halaman 1
+          OnboardingScreen2(), // Halaman 2 (sementara)
+          OnboardingScreen3(), // Halaman 3 (sementara)
         ],
       ),
     );
