@@ -15,19 +15,18 @@ import 'package:flutter_application_1/view/Login%20Register/onboarding3_splash.d
 import 'package:flutter_application_1/view/Login%20Register/login_screen.dart';
 import 'package:flutter_application_1/view/Login%20Register/register_screen.dart';
 
-// --- BAGIAN IMPORT FITUR TIM KELOMPOK (ABSOLUTE PATH) ---
-import 'package:flutter_application_1/view/Beranda/home_screen.dart';
-import 'package:flutter_application_1/view/Profile/profile_screen.dart';
-import 'package:flutter_application_1/view/Profile/help_center_screen.dart';
-import 'package:flutter_application_1/view/Notifikasi/notifikasi_screen.dart';
-import 'package:flutter_application_1/view/Pesanan/payment_screen.dart';
-import 'package:flutter_application_1/view/product_detail_screen.dart';
-
-// --- BAGIAN IMPORT VIEWMODEL ---
-import 'package:flutter_application_1/viewmodel/book_viewmodel.dart';
-import 'package:flutter_application_1/viewmodel/pesanan_view_model.dart';
-import 'package:flutter_application_1/viewmodel/auth_viewmodel.dart';
-import 'package:flutter_application_1/viewmodel/user_viewmodel.dart';
+// Mengimpor halaman utama & fitur baru dari tim kelompok
+import 'main_screen.dart';
+import 'view/Beranda/home_screen.dart';
+import 'view/Profile/profile_screen.dart';
+import 'view/Profile/help_center_screen.dart';
+import 'view/Notifikasi/notifikasi_screen.dart';
+import 'view/Pesanan/payment_screen.dart';
+import 'view/product_detail_screen.dart';
+import 'viewmodel/book_viewmodel.dart';
+import 'viewmodel/pesanan_view_model.dart';
+import 'viewmodel/auth_viewmodel.dart';
+import 'viewmodel/user_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,8 +38,10 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PesananViewModel()),
         ChangeNotifierProvider(create: (_) => BookViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
+
         ChangeNotifierProvider(create: (_) => UserViewModel()),
       ],
+
       child: const MyApp(),
     ),
   );

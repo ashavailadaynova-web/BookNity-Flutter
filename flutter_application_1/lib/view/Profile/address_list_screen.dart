@@ -1,98 +1,327 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
-class AddressListScreen extends StatelessWidget {
+import '../../viewmodel/address_viewmodel.dart';
+import 'add_address_screen.dart';
+
+class AddressListScreen extends StatefulWidget {
   const AddressListScreen({super.key});
 
   @override
+  State<AddressListScreen> createState() =>
+      _AddressListScreenState();
+}
+
+class _AddressListScreenState
+    extends State<AddressListScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) {
+
+      final user =
+          FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        context
+            .read<AddressViewModel>()
+            .loadAddresses(
+              user.uid,
+            );
+      }
+    });
+  }
+
+  Future<void> _refreshAddresses() async {
+
+    final user =
+        FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    await context
+        .read<AddressViewModel>()
+        .loadAddresses(
+          user.uid,
+        );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const primaryTextColor = Color(0xFF3E2723);
-    const accentColor = Color(0xFFFF7043);
-    final softGrey = Colors.grey[50]!;
+
+    const primaryTextColor =
+        Color(0xFF3E2723);
+
+    const accentColor =
+        Color(0xFFFF7043);
+
+    final addresses =
+        context
+            .watch<AddressViewModel>()
+            .addresses;
 
     return Scaffold(
       backgroundColor: Colors.white,
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: primaryTextColor, size: 20),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: primaryTextColor,
+            size: 20,
+          ),
+          onPressed: () =>
+              Navigator.pop(context),
         ),
+
         title: Text(
           "Alamat Pengiriman",
-          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: primaryTextColor),
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight:
+                FontWeight.bold,
+            color:
+                primaryTextColor,
+          ),
         ),
+
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          _buildAddressCard(
-            label: "Rumah Utama",
-            recipient: "Daynova Shava (081234567890)",
-            detail: "Jl. Kalimantan No. 37, Kecamatan Sumbersari, Jember, Jawa Timur, 68121",
-            isMain: true,
-            cardBg: softGrey,
-          ),
-          const SizedBox(height: 16),
-          _buildAddressCard(
-            label: "Kost / Kampus",
-            recipient: "Daynova Shava (081234567890)",
-            detail: "Fakultas Ilmu Komputer, Universitas Jember, Jawa Timur, 68121",
-            isMain: false,
-            cardBg: softGrey,
-          ),
-          const SizedBox(height: 32),
-          OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add_rounded, color: accentColor),
-            label: Text("Tambah Alamat Baru", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: accentColor)),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              side: const BorderSide(color: accentColor, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildAddressCard({
-    required String label,
-    required String recipient,
-    required String detail,
-    required bool isMain,
-    required Color cardBg,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isMain ? const Color(0xFFFF7043) : Colors.grey[200]!, width: isMain ? 1.5 : 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF3E2723))),
-              if (isMain)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFFF7043).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Text("Utama", style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFFFF7043))),
+      body: Padding(
+        padding:
+            const EdgeInsets.all(20),
+
+        child: Column(
+          children: [
+
+            Expanded(
+              child:
+                  addresses.isEmpty
+
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment:
+                                MainAxisAlignment
+                                    .center,
+
+                            children: [
+
+                              Icon(
+                                Icons
+                                    .location_off_outlined,
+                                size: 80,
+                                color:
+                                    Colors.grey[400],
+                              ),
+
+                              const SizedBox(
+                                height: 20,
+                              ),
+
+                              Text(
+                                "Belum ada alamat tersimpan",
+                                style:
+                                    GoogleFonts.poppins(
+                                  fontSize:
+                                      16,
+                                  fontWeight:
+                                      FontWeight
+                                          .w600,
+                                  color:
+                                      primaryTextColor,
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 8,
+                              ),
+
+                              Text(
+                                "Tambahkan alamat untuk mempermudah proses pengiriman buku.",
+                                textAlign:
+                                    TextAlign
+                                        .center,
+                                style:
+                                    GoogleFonts.poppins(
+                                  fontSize:
+                                      13,
+                                  color:
+                                      Colors.grey[
+                                          600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+
+                      : ListView.builder(
+                          itemCount:
+                              addresses.length,
+
+                          itemBuilder:
+                              (
+                            context,
+                            index,
+                          ) {
+
+                            final address =
+                                addresses[
+                                    index];
+
+                            return Container(
+                              margin:
+                                  const EdgeInsets
+                                      .only(
+                                bottom:
+                                    16,
+                              ),
+
+                              padding:
+                                  const EdgeInsets
+                                      .all(
+                                20,
+                              ),
+
+                              decoration:
+                                  BoxDecoration(
+                                color:
+                                    Colors.grey[
+                                        50],
+                                borderRadius:
+                                    BorderRadius
+                                        .circular(
+                                  24,
+                                ),
+                              ),
+
+                              child:
+                                  Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment
+                                        .start,
+
+                                children: [
+
+                                  Text(
+                                    address
+                                        .label,
+                                    style:
+                                        GoogleFonts
+                                            .poppins(
+                                      fontSize:
+                                          15,
+                                      fontWeight:
+                                          FontWeight
+                                              .bold,
+                                    ),
+                                  ),
+
+                                  const SizedBox(
+                                    height:
+                                        8,
+                                  ),
+
+                                  Text(
+                                    "${address.recipient} (${address.phone})",
+                                    style:
+                                        GoogleFonts
+                                            .poppins(),
+                                  ),
+
+                                  const SizedBox(
+                                    height:
+                                        4,
+                                  ),
+
+                                  Text(
+                                    address
+                                        .address,
+                                    style:
+                                        GoogleFonts
+                                            .poppins(
+                                      color:
+                                          Colors.grey[
+                                              700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+            ),
+
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+
+              child:
+                  OutlinedButton.icon(
+
+                onPressed:
+                    () async {
+
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) =>
+                              const AddAddressScreen(),
+                    ),
+                  );
+
+                  await _refreshAddresses();
+                },
+
+                icon:
+                    const Icon(
+                  Icons.add_rounded,
+                  color:
+                      accentColor,
                 ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(recipient, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[800])),
-          const SizedBox(height: 4),
-          Text(detail, style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600], height: 1.4)),
-        ],
+
+                label: Text(
+                  "Tambah Alamat Baru",
+                  style:
+                      GoogleFonts.poppins(
+                    fontWeight:
+                        FontWeight.bold,
+                    color:
+                        accentColor,
+                  ),
+                ),
+
+                style:
+                    OutlinedButton.styleFrom(
+                  side:
+                      const BorderSide(
+                    color:
+                        accentColor,
+                    width:
+                        1.5,
+                  ),
+
+                  shape:
+                      RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      24,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'view/Pesanan/pesanan_screen.dart';
 import 'view/Beranda/home_screen.dart';
+import 'view/Profile/profile_screen.dart';
 
 // 🔥 SESUAI STRUKTUR PROYEKMU: Mengimport halaman tambah produk/buku
 import 'view/add_product_screen.dart';
@@ -23,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     const PesananScreen(),
     const Center(child: Text("Halaman Notifikasi (Segera Hadir)")),
-    const Center(child: Text("Halaman Profile (Segera Hadir)")),
+    const ProfileScreen(),
   ];
 
   @override
