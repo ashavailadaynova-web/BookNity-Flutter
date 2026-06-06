@@ -48,30 +48,38 @@ class AuthService {
   // LOGIN
   // =========================
 
-  Future<UserModel?> login({
-    required String email,
-    required String password,
-  }) async {
-    final credential =
-        await _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+ Future<UserModel?> login({
+  required String email,
+  required String password,
+}) async {
 
-    final user = credential.user;
+  final credential =
+      await _auth.signInWithEmailAndPassword(
+    email: email,
+    password: password,
+  );
 
-    if (user == null) {
-      return null;
-    }
+  final user = credential.user;
 
-    return UserModel(
-      uid: user.uid,
-      name: '',
-      email: user.email ?? '',
-    );
+  if (user == null) {
+    return null;
   }
 
-  
+  final doc = await _firestore
+      .collection('users')
+      .doc(user.uid)
+      .get();
+
+  if (!doc.exists) {
+    return null;
+  }
+
+  return UserModel.fromMap(
+    doc.data()!,
+    doc.id,
+  );
+}
+
 
   // =========================
   // CURRENT USER

@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../../model/user_model.dart';
+import '../../viewmodel/user_viewmodel.dart';
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -11,12 +19,13 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+  File? _imageFile; 
+  String _photoUrl = '';
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController(text: "");
   final TextEditingController _locationController = TextEditingController(text: "");
   final TextEditingController _bioController = TextEditingController(
-    text: "Lover of gothic horror and vintage hardcovers. Usually found in a sun-drenched corner with a cup of oolong and a thick novel.",
+    text: "",
   );
   final TextEditingController _websiteController = TextEditingController(text: "");
   final TextEditingController _emailController = TextEditingController();
@@ -26,22 +35,109 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final List<String> _categories = ["Horror", "Fiction", "Mystery", "History", "Comic", "Biography", "Romance"];
   final List<String> _selectedCategories = ["Horror", "Mystery"]; 
 
+
+  Future<void> _pickImage() async {
+  final picker = ImagePicker();
+
+  final pickedFile =
+      await picker.pickImage(
+    source: ImageSource.gallery,
+    imageQuality: 70,
+  );
+
+  if (pickedFile == null) return;
+
+  setState(() {
+    _imageFile = File(
+      pickedFile.path,
+    );
+  });
+}
+
   @override
 void initState() {
   super.initState();
 
-  final user =
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _loadUserData();
+  });
+}
+
+Future<String> _uploadProfileImage(
+  String uid,
+) async {
+  try {
+
+    if (_imageFile == null) {
+      return _photoUrl;
+    }
+
+    final ref =
+        FirebaseStorage.instance
+            .ref()
+            .child('profile_photos')
+            .child('$uid.jpg');
+
+    await ref.putFile(_imageFile!);
+
+    final url =
+        await ref.getDownloadURL();
+
+    print("UPLOAD BERHASIL");
+    print(url);
+
+    return url;
+
+  } catch (e) {
+
+    print("UPLOAD ERROR");
+    print(e);
+
+    rethrow;
+  }
+}
+Future<void> _loadUserData() async {
+  final firebaseUser =
       FirebaseAuth.instance.currentUser;
 
-  if (user != null) {
+  if (firebaseUser == null) return;
+
+  final userVM =
+      context.read<UserViewModel>();
+
+  await userVM.getUser(
+    firebaseUser.uid,
+  );
+
+  final user =
+      userVM.currentUser;
+
+  if (user == null) return;
+
+  setState(() {
     _nameController.text =
-        user.email!
-            .split('@')
-            .first;
+        user.name;
 
     _emailController.text =
-        user.email ?? '';
-  }
+        user.email;
+
+    _bioController.text =
+        user.bio;
+
+    _locationController.text =
+        user.location;
+
+    _websiteController.text =
+        user.website;
+
+    _usernameController.text =
+    user.username;
+
+_birthDateController.text =
+    user.birthDate;
+
+    _photoUrl = user.photoUrl;
+  });
 }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -135,24 +231,39 @@ void initState() {
                               height: 100,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                                image: const DecorationImage(
-                                  image: NetworkImage('https://i.imgur.com/8QjU0rU.png'),
-                                  fit: BoxFit.cover,
-                                ),
+                                color: Colors.brown.shade100,
+                              ),
+                              child: ClipOval(
+                                child: _imageFile != null
+                                    ? Image.file(
+                                        _imageFile!,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : (_photoUrl.isNotEmpty
+                                        ? Image.network(
+                                            _photoUrl,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Center(
+                                            child: Text(
+                                              _nameController.text.isNotEmpty
+                                                  ? _nameController.text[0]
+                                                      .toUpperCase()
+                                                  : "?",
+                                              style: const TextStyle(
+                                                fontSize: 40,
+                                                fontWeight:
+                                                    FontWeight.bold,
+                                              ),
+                                            ),
+                                          )),
                               ),
                             ),
                             Positioned(
                               bottom: 0,
                               right: 0,
                               child: GestureDetector(
-                                onTap: () {},
+                                onTap: _pickImage,
                                 child: Container(
                                   padding: const EdgeInsets.all(7),
                                   decoration: const BoxDecoration(
@@ -350,11 +461,61 @@ void initState() {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Navigator.pop(context);
+                  onPressed: () async {
+                    if (!_formKey.currentState!.validate()) {
+                      return;
                     }
+
+                    final firebaseUser =
+                        FirebaseAuth.instance.currentUser;
+
+                    if (firebaseUser == null) {
+                      return;
+                    }
+
+                    print("MULAI UPLOAD FOTO");
+
+                    final photoUrl =
+                        await _uploadProfileImage(
+                      firebaseUser.uid,
+                    );
+
+                    print("PHOTO URL = $photoUrl");
+
+                    final updatedUser = UserModel(
+                      uid: firebaseUser.uid,
+                      name: _nameController.text.trim(),
+                      email: _emailController.text.trim(),
+                      bio: _bioController.text.trim(),
+                      location: _locationController.text.trim(),
+                      website: _websiteController.text.trim(),
+                      username: _usernameController.text.trim(),
+                      birthDate: _birthDateController.text.trim(),
+                      photoUrl: photoUrl,
+                    );
+
+                    await context
+                        .read<UserViewModel>()
+                        .updateUser(updatedUser);
+
+                    await context
+                        .read<UserViewModel>()
+                        .getUser(firebaseUser.uid);
+
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "Profil berhasil disimpan",
+                        ),
+                      ),
+                    );
+
+                    Navigator.pop(context);
+
                   },
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFB13D14),
                     elevation: 0,
@@ -369,7 +530,7 @@ void initState() {
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
-                  ),
+                     ),
                 ),
               ),
             ),

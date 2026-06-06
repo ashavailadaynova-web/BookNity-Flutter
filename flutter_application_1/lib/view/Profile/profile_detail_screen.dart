@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodel/user_viewmodel.dart';
 
 class ProfileDetailScreen extends StatelessWidget {
   const ProfileDetailScreen({super.key});
@@ -10,7 +12,8 @@ class ProfileDetailScreen extends StatelessWidget {
     const accentColor = Color(0xFFFF7043);
     final softGrey = Colors.grey[50]!;
     final dividerColor = Colors.grey[200]!;
-
+    final user =
+           context.watch<UserViewModel>().currentUser;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -45,13 +48,15 @@ class ProfileDetailScreen extends StatelessWidget {
                 children: [
                   _buildImportantDataTile(
                     label: "Nama Lengkap sesuai KTP",
-                    value: "Daynova Shava",
+                    value: user?.name ?? "-",
                     icon: Icons.badge_outlined,
                   ),
                   Divider(color: dividerColor, height: 1, indent: 64),
                   _buildImportantDataTile(
                     label: "Username",
-                    value: "@daynovashava",
+                   value: user?.username.isNotEmpty == true
+                    ? "@${user!.username}"
+                    : "-",
                     icon: Icons.alternate_email_rounded,
                   ),
                   Divider(color: dividerColor, height: 1, indent: 64),
@@ -79,14 +84,14 @@ class ProfileDetailScreen extends StatelessWidget {
                 children: [
                   _buildImportantDataTile(
                     label: "Alamat Email",
-                    value: "daynova***@example.com",
+                    value: user?.email ?? "-",
                     icon: Icons.email_outlined,
                     trailing: const Icon(Icons.check_circle, color: Colors.green, size: 18),
                   ),
                   Divider(color: dividerColor, height: 1, indent: 64),
                   _buildImportantDataTile(
                     label: "Nomor Telepon / WhatsApp",
-                    value: "+62 812-3456-7890",
+                    value: "Belum ditambahkan",
                     icon: Icons.phone_android_rounded,
                     trailing: const Icon(Icons.check_circle, color: Colors.green, size: 18),
                   ),

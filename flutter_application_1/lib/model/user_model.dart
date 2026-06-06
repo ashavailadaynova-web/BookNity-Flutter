@@ -5,6 +5,9 @@ class UserModel {
   final String bio;
   final String location;
   final String website;
+  final String username;
+  final String birthDate;
+  final String photoUrl;
 
   const UserModel({
     required this.uid,
@@ -13,6 +16,9 @@ class UserModel {
     this.bio = '',
     this.location = '',
     this.website = '',
+    this.username = '',
+    this.birthDate = '',
+    this.photoUrl = '',
   });
 
   factory UserModel.fromMap(
@@ -26,6 +32,9 @@ class UserModel {
       bio: map['bio'] ?? '',
       location: map['location'] ?? '',
       website: map['website'] ?? '',
+      username: map['username'] ?? '',
+      birthDate: map['birthDate'] ?? '',    
+      photoUrl: map['photoUrl'] ?? '',  
     );
   }
 
@@ -36,6 +45,10 @@ class UserModel {
       'bio': bio,
       'location': location,
       'website': website,
+      'username': username,
+'birthDate': birthDate,
+'photoUrl': photoUrl,
+
     };
   }
 }
