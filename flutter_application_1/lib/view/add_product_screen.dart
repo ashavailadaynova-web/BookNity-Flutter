@@ -9,10 +9,8 @@ import 'package:provider/provider.dart';
 import '../model/book_model.dart';
 import '../viewmodel/book_viewmodel.dart';
 
-
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
-  
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -20,8 +18,9 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen> {
   File? selectedImage;
+  bool _isLoading = false; 
 
-  final ImagePicker _picker =ImagePicker();
+  final ImagePicker _picker = ImagePicker();
   final TextEditingController titleController = TextEditingController();
   final TextEditingController authorController = TextEditingController();
   final TextEditingController yearController = TextEditingController();
@@ -37,95 +36,83 @@ class _AddProductScreenState extends State<AddProductScreen> {
     "Seni/Hobi",
     "Komik",
     "Sekolah",
-    "Sejarah"
+    "Sejarah",
   ];
 
   Future<void> pickImage() async {
-  final XFile? image =
-      await _picker.pickImage(
-    source: ImageSource.gallery,
-  );
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
 
-  if (image != null) {
-    setState(() {
-      selectedImage = File(image.path);
-    });
+    if (image != null) {
+      setState(() {
+        selectedImage = File(image.path);
+      });
+    }
   }
-}
 
-Future<void> uploadBook() async {
-if (selectedImage == null) {
-ScaffoldMessenger.of(context).showSnackBar(
-const SnackBar(
-content: Text(
-'Silakan pilih cover buku terlebih dahulu',
-),
-),
-);
-return;
-}
+  Future<void> uploadBook() async {
+    if (selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan pilih cover buku terlebih dahulu'),
+        ),
+      );
+      return;
+    }
 
-if (titleController.text.trim().isEmpty ||
-authorController.text.trim().isEmpty ||
-priceController.text.trim().isEmpty) {
-ScaffoldMessenger.of(context).showSnackBar(
-const SnackBar(
-content: Text(
-'Lengkapi data buku terlebih dahulu',
-),
-),
-);
-return;
-}
+    if (titleController.text.trim().isEmpty ||
+        authorController.text.trim().isEmpty ||
+        priceController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lengkapi data buku terlebih dahulu')),
+      );
+      return;
+    }
 
-try {
-final bookViewModel =
-context.read<BookViewModel>();
+    setState(() {
+      _isLoading = true;
+    });
 
-final imageUrl =
-    await bookViewModel.uploadImage(
-  selectedImage!,
-);
+    try {
+      final bookViewModel = context.read<BookViewModel>();
 
-final book = BookModel(
-  title: titleController.text.trim(),
-  author: authorController.text.trim(),
-  image: imageUrl,
-  price: priceController.text.trim(),
-  category: selectedCategory,
-  description:
-      descriptionController.text.trim(),
-  rating: 0,
-  storeName: "Booknity Store",
-  year: yearController.text.trim(),
-  isbn: isbnController.text.trim(),
-  condition: selectedCondition,
-);
+      // 🟢 Mengunggah file ke Cloudinary dan menghasilkan URL string aman (https)
+      final imageUrl = await bookViewModel.uploadImage(selectedImage!);
 
-await bookViewModel.addBook(book);
+      final book = BookModel(
+        title: titleController.text.trim(),
+        author: authorController.text.trim(),
+        image: imageUrl, // URL Cloudinary dikirim sebagai data String
+        price: priceController.text.trim(),
+        category: selectedCategory,
+        description: descriptionController.text.trim(),
+        rating: 0.0, // 🟢 Menggunakan 0.0 (double) agar sesuai dengan struktur model bertipe pecahan
+        storeName: "Booknity Store",
+        year: yearController.text.trim(),
+        isbn: isbnController.text.trim(),
+        condition: selectedCondition,
+      );
 
-if (!mounted) return;
+      // Mengirim objek buku baru ke Firestore
+      await bookViewModel.addBook(book);
 
-Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(
-    builder: (_) =>
-        const SuccessAddProductScreen(),
-  ),
-);
+      if (!mounted) return;
 
-
-} catch (e) {
-ScaffoldMessenger.of(context).showSnackBar(
-SnackBar(
-content: Text(
-'Upload gagal: $e',
-),
-),
-);
-}
-}
-
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const SuccessAddProductScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload gagal: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,33 +137,26 @@ content: Text(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-
             /// IMAGE SECTION
             SizedBox(
-            width: double.infinity,
-            child: GestureDetector(
-              onTap: pickImage,
-              child: _imageBox(
-                width: double.infinity,
-                height: 220,
-                large: true,
+              width: double.infinity,
+              child: GestureDetector(
+                onTap: _isLoading ? null : pickImage, 
+                child: _imageBox(
+                  width: double.infinity,
+                  height: 220,
+                  large: true,
+                ),
               ),
             ),
-          ),
 
             const SizedBox(height: 28),
 
             _title("JUDUL BUKU"),
-            _textField(
-              controller: titleController,
-              hint: "Judul buku",
-            ),
+            _textField(controller: titleController, hint: "Judul buku"),
 
             _title("PENULIS BUKU"),
-            _textField(
-              controller: authorController,
-              hint: "Nama penulis buku",
-            ),
+            _textField(controller: authorController, hint: "Nama penulis buku"),
 
             _title("TAHUN TERBIT"),
             _textField(
@@ -200,11 +180,13 @@ content: Text(
                 bool isSelected = selectedCategory == category;
 
                 return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedCategory = category;
-                    });
-                  },
+                  onTap: _isLoading
+                      ? null
+                      : () {
+                          setState(() {
+                            selectedCategory = category;
+                          });
+                        },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 18,
@@ -218,9 +200,7 @@ content: Text(
                     ),
                     child: Text(
                       category,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
                 );
@@ -246,20 +226,16 @@ content: Text(
                       value: "Like New",
                       child: Text("Like New"),
                     ),
-                    DropdownMenuItem(
-                      value: "Good",
-                      child: Text("Good"),
-                    ),
-                    DropdownMenuItem(
-                      value: "Fair",
-                      child: Text("Fair"),
-                    ),
+                    DropdownMenuItem(value: "Good", child: Text("Good")),
+                    DropdownMenuItem(value: "Fair", child: Text("Fair")),
                   ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCondition = value!;
-                    });
-                  },
+                  onChanged: _isLoading
+                      ? null
+                      : (value) {
+                          setState(() {
+                            selectedCondition = value!;
+                          });
+                        },
                 ),
               ),
             ),
@@ -276,10 +252,13 @@ content: Text(
               child: TextField(
                 controller: priceController,
                 keyboardType: TextInputType.number,
+                enabled: !_isLoading,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
                   prefixText: "Rp. ",
                   hintText: "Harga jual buku",
                 ),
@@ -298,6 +277,7 @@ content: Text(
               child: TextField(
                 controller: descriptionController,
                 maxLines: 6,
+                enabled: !_isLoading,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.all(20),
@@ -309,24 +289,43 @@ content: Text(
 
             const SizedBox(height: 30),
 
-          SizedBox(
-          width: double.infinity,
-          height: 60,
-          child: ElevatedButton(
-            onPressed: () {
-              print("TOMBOL DITEKAN");
-            },
-            child: const Text(
-              "Unggah Produk",
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : uploadBook,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8F4F17), 
+                  disabledBackgroundColor: const Color(0xffD9D9D9),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : Text(
+                        "Unggah Produk",
+                        style: GoogleFonts.montserrat(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
             ),
-          ),
-        ),
             const SizedBox(height: 16),
 
             const Text.rich(
               TextSpan(
-                text:
-                    "Dengan mengunggah, kamu setuju dengan seluruh ",
+                text: "Dengan mengunggah, kamu setuju dengan seluruh ",
                 children: [
                   TextSpan(
                     text: "peraturan dan ketentuan",
@@ -335,9 +334,7 @@ content: Text(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  TextSpan(
-                    text: " dari komunitas kami.",
-                  ),
+                  TextSpan(text: " dari komunitas kami."),
                 ],
               ),
               textAlign: TextAlign.center,
@@ -347,6 +344,7 @@ content: Text(
       ),
     );
   }
+
   @override
   void dispose() {
     titleController.dispose();
@@ -388,10 +386,13 @@ content: Text(
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        enabled: !_isLoading,
         decoration: InputDecoration(
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 18,
+          ),
           hintText: hint,
         ),
       ),
@@ -402,71 +403,68 @@ content: Text(
     required double width,
     required double height,
     bool large = false,
-    }) {
+  }) {
     return Container(
-    width: width,
-    height: height,
-    decoration: BoxDecoration(
-    color: const Color(0xffF7F2EC),
-    borderRadius: BorderRadius.circular(28),
-    border: Border.all(
-    color: const Color(0xffE6DDD5),
-    ),
-    ),
-    child: selectedImage != null && large
-    ? ClipRRect(
-    borderRadius: BorderRadius.circular(28),
-    child: Image.file(
-    selectedImage!,
-    fit: BoxFit.cover,
-    width: width,
-    height: height,
-    ),
-    )
-    : large
-    ? Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-    Container(
-    width: 58,
-    height: 58,
-    decoration: const BoxDecoration(
-    color: Color(0xffB84A14),
-    shape: BoxShape.circle,
-    ),
-    child: const Icon(
-    Icons.add_a_photo_outlined,
-    color: Colors.white,
-    ),
-    ),
-    const SizedBox(height: 16),
-    Text(
-    "Add Cover Photo",
-    style: GoogleFonts.plusJakartaSans(
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    color: const Color(0xff2B2522),
-    ),
-    ),
-    const SizedBox(height: 4),
-    Text(
-    "Recommended: Bright, natural light",
-    textAlign: TextAlign.center,
-    style: GoogleFonts.plusJakartaSans(
-    fontSize: 12,
-    color: Colors.grey,
-    ),
-    ),
-    ],
-    )
-    : const Center(
-    child: Icon(
-    Icons.add_a_photo_outlined,
-    size: 28,
-    color: Color(0xffD5C8BF),
-    ),
-    ),
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xffF7F2EC),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xffE6DDD5)),
+      ),
+      child: selectedImage != null && large
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(28),
+              child: Image.file(
+                selectedImage!,
+                fit: BoxFit.cover,
+                width: width,
+                height: height,
+              ),
+            )
+          : large
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: const BoxDecoration(
+                        color: Color(0xffB84A14),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add_a_photo_outlined,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Add Cover Photo",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xff2B2522),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Recommended: Bright, natural light",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                )
+              : const Center(
+                  child: Icon(
+                    Icons.add_a_photo_outlined,
+                    size: 28,
+                    color: Color(0xffD5C8BF),
+                  ),
+                ),
     );
-}
-
+  }
 }

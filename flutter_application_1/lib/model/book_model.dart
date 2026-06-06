@@ -61,19 +61,25 @@ class BookModel {
     );
   }
 
-  factory BookModel.fromMap(
-    Map<String, dynamic> map,
-    String documentId,
-  ) {
+  factory BookModel.fromMap(Map<String, dynamic> map, String documentId) {
+    // 🟢 FUNGSI PENGAMANAN RATING (Sudah Bagus!)
+    double parsedRating = 0.0;
+    if (map['rating'] is num) {
+      parsedRating = (map['rating'] as num).toDouble();
+    } else if (map['rating'] != null && map['rating'].toString().isNotEmpty) {
+      parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
+    }
+
     return BookModel(
       id: documentId,
       title: map['title'] ?? '',
       author: map['author'] ?? '',
-      image: map['image'] ?? '',
-      price: map['price'] ?? '',
+      // Menyelaraskan nama field image/imageUrl agar fleksibel membaca data Firestore
+      image: map['image'] ?? map['imageUrl'] ?? '',
+      price: map['price']?.toString() ?? '',
       category: map['category'] ?? '',
       description: map['description'] ?? '',
-      rating: (map['rating'] ?? 0).toDouble(),
+      rating: parsedRating,
       storeName: map['storeName'] ?? '',
       isFavorite: map['isFavorite'] ?? false,
       year: map['year'] ?? '',
@@ -82,6 +88,7 @@ class BookModel {
     );
   }
 
+  // 🟢 REVISI UTAMA: Menambahkan field year, isbn, dan condition ke map data agar ikut terupload ke Firestore
   Map<String, dynamic> toMap() {
     return {
       'title': title,
