@@ -10,12 +10,39 @@ import 'edit_profile_screen.dart';
 import '../add_product_screen.dart';
 import 'help_center_screen.dart';
 import 'settings_screen.dart';
+import '../../viewmodel/user_viewmodel.dart';
 
 // IMPORT WIDGET PRODUCT CARD YANG BARU SAJA DIPISAH:
 import '../../widgets/product_card.dart'; // Sesuaikan lokasi foldernya!
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() =>
+      _ProfileScreenState();
+}
+
+      class _ProfileScreenState
+          extends State<ProfileScreen> {
+
+        @override
+        void initState() {
+          super.initState();
+
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) {
+
+            final firebaseUser =
+                FirebaseAuth.instance.currentUser;
+
+            if (firebaseUser != null) {
+              context
+                  .read<UserViewModel>()
+                  .getUser(firebaseUser.uid);
+            }
+          });
+        }
 
   @override
   Widget build(BuildContext context) {
@@ -27,28 +54,40 @@ class ProfileScreen extends StatelessWidget {
     const badgeYellow = Color(0xFFFFF1C5);
 
     final List<String> myGenres = ["Horror", "Mystery"];
-    final user = FirebaseAuth.instance.currentUser;
-    final email = user?.email ?? "Belum login";
-    final nama =
-    email.split('@').first;
+    final firebaseUser =
+    FirebaseAuth.instance.currentUser;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              
-              Text(
-                "Profil Saya",
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: primaryTextColor,
-                ),
-              ),
+if (firebaseUser == null) {
+  return const Scaffold(
+    body: Center(
+      child: Text("Belum Login"),
+    ),
+  );
+}
+
+   return Consumer<UserViewModel>(
+      builder: (context, userVM, child) {
+
+        final userData =
+            userVM.currentUser;
+
+        final nama =
+            userData?.name.isNotEmpty == true
+                ? userData!.name
+                : "Pengguna";
+
+        final email =
+            userData?.email ??
+                firebaseUser.email ??
+                "";
+
+       return Scaffold(
+        backgroundColor: backgroundColor,
+
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
               
               const SizedBox(height: 24),
               
@@ -60,7 +99,10 @@ class ProfileScreen extends StatelessWidget {
                       height: 130,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.08),
@@ -68,12 +110,26 @@ class ProfileScreen extends StatelessWidget {
                             offset: const Offset(0, 8),
                           ),
                         ],
-                        image: const DecorationImage(
-                          image: NetworkImage('https://i.imgur.com/8QjU0rU.png'),
-                          fit: BoxFit.cover,
-                        ),
                       ),
-                    ),
+                      child: ClipOval(
+                        child: userData?.photoUrl.isNotEmpty == true
+                            ? Image.network(
+                                userData!.photoUrl,
+                                fit: BoxFit.cover,
+                              )
+                            : Center(
+                                child: Text(
+                                  nama.isNotEmpty
+                                      ? nama[0].toUpperCase()
+                                      : "?",
+                                  style: const TextStyle(
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    )
                   ],
                 ),
               ),
@@ -292,13 +348,15 @@ const ProductSection(
                 ),
               ),
               
-              const SizedBox(height: 120), 
-           ],
-          ), // Column
-        ), // SingleChildScrollView
-      ), // SafeArea
-    ); // Scaffold
-  } // build
+             const SizedBox(height: 120),
+              ],
+            ),
+          ),
+        ),
+      );
+    }, // builder
+  ); // Consumer
+} // build
 
   Widget _buildFollowStat(String value, String label) {
     return Column(

@@ -22,6 +22,7 @@ import 'view/product_detail_screen.dart';
 import 'viewmodel/book_viewmodel.dart';
 import 'viewmodel/pesanan_view_model.dart';
 import 'viewmodel/auth_viewmodel.dart';
+import 'viewmodel/address_viewmodel.dart';
 import 'viewmodel/user_viewmodel.dart';
 
 void main() async {
@@ -37,8 +38,11 @@ void main() async {
 
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
 
-        ChangeNotifierProvider(create: (_) => UserViewModel()),
-      ],
+      ChangeNotifierProvider(
+      create: (_) => UserViewModel(),
+      ),
+
+    ],
 
       child: const MyApp(),
     ),
