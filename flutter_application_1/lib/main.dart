@@ -1,6 +1,7 @@
 import 'dart:async'; // Ditambahkan agar objek 'Timer' tidak error lagi
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
 // --- BAGIAN IMPORT UTAMA & LAYOUT ---
@@ -54,6 +55,8 @@ class MyApp extends StatelessWidget {
       title: 'Booknity',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
+
+      // 🟢 KODE YANG DIUBAH: Langsung arahkan ke SplashScreen agar tidak langsung loncat ke Beranda
       home: const SplashScreen(),
 
       // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
@@ -103,11 +106,9 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
         }
       } else {
         // Jika sudah di halaman onboarding terakhir (ke-3), matikan timer
-        // dan langsung pindah ke halaman RegisterScreen secara otomatis
+        // dan langsung pindah ke halaman LoginScreen secara otomatis
         _onboardingTimer?.cancel();
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const RegisterScreen()),
-        );
+        Navigator.of(context).pushReplacementNamed('/login');
       }
     });
   }
@@ -129,7 +130,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
             _currentPage = page;
           });
         },
-        children: const [
+        children: [
           OnboardingScreen(), // Halaman 1
           OnboardingScreen2(), // Halaman 2
           OnboardingScreen3(), // Halaman 3

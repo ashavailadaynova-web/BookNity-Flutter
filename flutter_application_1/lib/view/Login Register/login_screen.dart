@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'register_screen.dart';
 import '../../main_screen.dart';
 import 'package:provider/provider.dart';
-
 import '../../viewmodel/auth_viewmodel.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -25,13 +24,148 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // 🟢 FUNGSI RESET PASSWORD YANG SUDAH DIPISAH AGAR TIDAK MERUSAK DIALOG
+  Future<void> _handleForgotPassword(String email) async {
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Email tidak boleh kosong')));
+      return;
+    }
+
+    // Tampilkan loading di halaman utama biar dialog aman dari rebuild crash
+    // Menggunakan Navigator.pop(context) di awal agar dialog langsung tertutup bersih
+    Navigator.pop(context);
+
+    // Panggil fungsi Firebase menggunakan context halaman utama via read
+    final authViewModel = context.read<AuthViewModel>();
+
+    // Kita manipulasi loading manual lewat fungsi temporary atau langsung eksekusi
+    final success = await authViewModel.forgotPassword(email: email);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF8F4F17),
+          content: Text(
+            'Email reset telah dikirim! Periksa Inbox/Spam kamu.',
+            style: GoogleFonts.montserrat(color: Colors.white),
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal mengirim email. Pastikan email terdaftar.'),
+        ),
+      );
+    }
+  }
+
+  // 🟢 POPUP DIALOG BERSIH TANPA STATEFULBUILDER (ANTI-CRASH)
+  void _openForgotPasswordDialog() {
+    final resetEmailController = TextEditingController(
+      text: _emailController.text,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFFFFDF2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Reset Password',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF8F4F17),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Masukkan email terdaftar kamu untuk menerima link reset password.',
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  color: const Color(0xFF6B4E37),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 15),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5EFE6),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: TextField(
+                  controller: resetEmailController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Masukkan Email Address',
+                    hintStyle: GoogleFonts.montserrat(
+                      color: const Color(0xFFB3A699),
+                      fontSize: 13,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Batal',
+                style: GoogleFonts.montserrat(color: const Color(0xFF8C8C8C)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final emailInput = resetEmailController.text.trim();
+                _handleForgotPassword(emailInput);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB02E6E),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Kirim Link',
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Memantau state loading global hanya untuk tombol login utama
+    final isAppLoading = context.select<AuthViewModel, bool>(
+      (vm) => vm.isLoading,
+    );
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFDF2), // Background krem super lembut
+      backgroundColor: const Color(0xFFFFFDF2),
       body: Stack(
         children: [
-          // 1. Elemen Lingkaran Gradien Besar di Atas
           Positioned(
             top: -250,
             left: -80,
@@ -43,37 +177,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFFFDF2),
-                    Color(0xFFFCD399), // Orange/Kuning hangat meleleh ke bawah
-                  ],
+                  colors: [Color(0xFFFFFDF2), Color(0xFFFCD399)],
                 ),
               ),
             ),
           ),
-
-          // 2. Konten Utama Form Login
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 35.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(
-                    height: 260,
-                  ), // Memberi ruang untuk lingkaran di atas
-                  // Judul Selamat Datang
+                  const SizedBox(height: 260),
                   Text(
                     'Hi, Welcome Back!',
                     style: GoogleFonts.montserrat(
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF8F4F17), // Cokelat ikonik
+                      color: const Color(0xFF8F4F17),
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Subtitle dengan teks "explore" yang dicetak miring/tebal
                   RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
@@ -96,28 +220,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 35),
-
-                  // Input Email
                   _buildInputField(
                     label: 'Email',
                     hint: 'Enter Email Address',
                     controller: _emailController,
                   ),
                   const SizedBox(height: 20),
-
-                  // Input Password
                   _buildInputField(
                     label: 'Password',
                     hint: 'Enter Password',
                     controller: _passwordController,
                     isPassword: true,
                   ),
-
-                  // Tombol Forgot Password
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: _openForgotPasswordDialog,
                       child: Text(
                         'Forgot Password?',
                         style: GoogleFonts.montserrat(
@@ -129,60 +247,66 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 15),
-
-                  // Tombol Log In Utama
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        final authViewModel = context.read<AuthViewModel>();
+                      onPressed: isAppLoading
+                          ? null
+                          : () async {
+                              final success = await context
+                                  .read<AuthViewModel>()
+                                  .login(
+                                    email: _emailController.text.trim(),
+                                    password: _passwordController.text.trim(),
+                                  );
 
-                        final success = await authViewModel.login(
-                          email: _emailController.text.trim(),
-                          password: _passwordController.text.trim(),
-                        );
+                              if (!mounted) return;
 
-                        if (!mounted) return;
-
-                        if (success) {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MainScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Email atau password salah'),
-                            ),
-                          );
-                        }
-                      },
+                              if (success) {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const MainScreen(),
+                                  ),
+                                  (route) => false,
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Email atau password salah'),
+                                  ),
+                                );
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFF8F4F17,
-                        ), // Warna cokelat tua
+                        backgroundColor: const Color(0xFF8F4F17),
+                        disabledBackgroundColor: const Color(0xFFD9D9D9),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
                         elevation: 0,
                       ),
-                      child: Text(
-                        'Log In',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: isAppLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              'Log In',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 30),
-
-                  // Pembatas "Or"
                   Row(
                     children: [
                       const Expanded(
@@ -210,25 +334,56 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 30),
-
-                  // Tombol Media Sosial (Sekarang Hanya Google)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildSocialButton(
-                        'assets/google.png',
-                        isIconData: false,
-                        customWidget: const Icon(
-                          Icons.g_mobiledata,
-                          size: 40,
-                          color: Colors.orange,
-                        ),
-                      ),
+                      isAppLoading
+                          ? const SizedBox(
+                              width: 50,
+                              height: 50,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF8F4F17),
+                                ),
+                              ),
+                            )
+                          : _buildSocialButton(
+                              'assets/google.png',
+                              customWidget: Image.asset(
+                                'assets/google.png',
+                                width: 32,
+                                height: 32,
+                                fit: BoxFit.contain,
+                              ),
+                              onTap: () async {
+                                final success = await context
+                                    .read<AuthViewModel>()
+                                    .loginWithGoogle();
+
+                                if (!mounted) return;
+
+                                if (success) {
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const MainScreen(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Gagal melakukan Login dengan Google',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
                     ],
                   ),
                   const SizedBox(height: 35),
-
-                  // Teks Register / Daftar Akun Baru
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -254,9 +409,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: GoogleFonts.montserrat(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: const Color(
-                              0xFFB02E6E,
-                            ), // Warna magenta kontras
+                            color: const Color(0xFFB02E6E),
                           ),
                         ),
                       ),
@@ -272,7 +425,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Helper Widget untuk membuat Input Field (Email & Password)
   Widget _buildInputField({
     required String label,
     required String hint,
@@ -333,22 +485,27 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Helper Widget untuk Tombol Sosial Media
   Widget _buildSocialButton(
     String assetPath, {
-    required bool isIconData,
     IconData? iconData,
     Color? iconColor,
     Widget? customWidget,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: const BoxDecoration(shape: BoxShape.circle),
-      child: Center(
-        child:
-            customWidget ??
-            Icon(iconData ?? Icons.circle, size: 32, color: iconColor),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFFD9D9D9), width: 1),
+        ),
+        child: Center(
+          child:
+              customWidget ??
+              Icon(iconData ?? Icons.circle, size: 32, color: iconColor),
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({Key? key}) : super(key: key);
@@ -9,63 +10,38 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
-  // Master Data Buku Terfavorit sesuai Mockup Wishlist
-  final List<Map<String, dynamic>> _wishlistBooks = [
-    {
-      'title': 'Laut Bercerita',
-      'author': 'oleh Leila S. Chudori',
-      'price': 'Rp. 60.000',
-      'seller': 'Toko Buku Aceng',
-      'rating': '4.7',
-      'image': 'assets/laut_bercerita.png',
-      'isLiked': true,
-    },
-    {
-      'title': 'Pergi',
-      'author': 'oleh Tere Liye',
-      'price': 'Rp. 58.000',
-      'seller': 'Raja Bekas',
-      'rating': '4.9',
-      'image': 'assets/pergi.png',
-      'isLiked': true,
-    },
-    {
-      'title': 'Terjadinya Alam S..',
-      'author': 'oleh Karimatul Amali',
-      'price': 'Rp. 40.000',
-      'seller': 'Buku Bekas Ayu',
-      'rating': '4.8',
-      'image': 'assets/asal_usul_semesta.png',
-      'isLiked': true,
-    },
-    {
-      'title': 'Menu Palembang',
-      'author': 'oleh Tara Budiman',
-      'price': 'Rp. 34.000',
-      'seller': 'Raja Bekas',
-      'rating': '4.9',
-      'image': 'assets/palembang.png',
-      'isLiked': true,
-    },
-    {
-      'title': 'Ibu Carikan...',
-      'author': 'oleh Afifah Rahma',
-      'price': 'Rp. 35.000',
-      'seller': 'Buku Bekas Ayu',
-      'rating': '4.8',
-      'image': 'assets/ibu_carikan.png',
-      'isLiked': true,
-    },
-    {
-      'title': 'Cape Deh!',
-      'author': 'oleh Sani Kurniawan',
-      'price': 'Rp. 40.000',
-      'seller': 'Buku Bekas Ayu',
-      'rating': '4.8',
-      'image': 'assets/cape_deh.png',
-      'isLiked': true,
-    },
-  ];
+  // 🟢 HELPER UTK FORMAT RUPIAH OTOMATIS
+  String formatRupiah(String hargaRaw) {
+    if (hargaRaw.isEmpty) return 'Rp 0';
+    String cleanHarga = hargaRaw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanHarga.isEmpty) return 'Rp 0';
+
+    final value = int.tryParse(cleanHarga) ?? 0;
+    String str = value.toString();
+    String result = '';
+    int count = 0;
+
+    for (int i = str.length - 1; i >= 0; i--) {
+      result = str[i] + result;
+      count++;
+      if (count == 3 && i != 0) {
+        result = '.$result';
+        count = 0;
+      }
+    }
+    return 'Rp $result';
+  }
+
+  // 🟢 FUNGSIONALITAS UNTUK MENGHAPUS DARI WISHLIST (UPDATE FIRESTORE)
+  Future<void> removeFromWishlist(String docId) async {
+    try {
+      await FirebaseFirestore.instance.collection('books').doc(docId).update({
+        'isFavorite': false,
+      });
+    } catch (e) {
+      debugPrint('Gagal menghapus dari wishlist: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,75 +63,94 @@ class _WishlistScreenState extends State<WishlistScreen> {
           ),
         ),
       ),
-      body: _wishlistBooks.isEmpty
-          ? _buildEmptyState()
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 10),
-                    // Tagline Atas
-                    Text(
-                      'PILIHAN FAVORITMU',
-                      style: GoogleFonts.montserrat(
-                        color: const Color(0xFFC76E2E),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Judul Utama Halaman
-                    Text(
-                      'Produk Terbaik',
-                      style: GoogleFonts.montserrat(
-                        color: const Color(0xFF2B1608),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 28,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Deskripsi
-                    Text(
-                      'Buku-buku ini membuatmu jatuh cinta berkali-kali, bahkan sampai kamu lupa bagaimana cara untuk membenci.',
-                      style: GoogleFonts.montserrat(
-                        color: const Color(0xFF6E5D53),
-                        fontSize: 13,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 25),
+      // 🟢 MENGGUNAKAN STREAMBUILDER UNTUK MENGAMBIL DATA REAL-TIME DARI FIRESTORE
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('books')
+            .where('isFavorite', isEqualTo: true) // Hanya ambil yang di-love
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                    // Grid Daftar Buku Favorit
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio:
-                                0.54, // Proporsi pas untuk mockup card vertikal
-                            crossAxisSpacing: 15,
-                            mainAxisSpacing: 15,
-                          ),
-                      itemCount: _wishlistBooks.length,
-                      itemBuilder: (context, index) {
-                        final item = _wishlistBooks[index];
-                        return _buildWishlistCard(item, index);
-                      },
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          final wishlistDocs = snapshot.data!.docs;
+
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  // Tagline Atas
+                  Text(
+                    'PILIHAN FAVORITMU',
+                    style: GoogleFonts.montserrat(
+                      color: const Color(0xFFC76E2E),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      letterSpacing: 1.2,
                     ),
-                    const SizedBox(height: 30),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Judul Utama Halaman
+                  Text(
+                    'Produk Terbaik',
+                    style: GoogleFonts.montserrat(
+                      color: const Color(0xFF2B1608),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Deskripsi
+                  Text(
+                    'Buku-buku ini membuatmu jatuh cinta berkali-kali, bahkan sampai kamu lupa bagaimana cara untuk membenci.',
+                    style: GoogleFonts.montserrat(
+                      color: const Color(0xFF6E5D53),
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+
+                  // Grid Daftar Buku Favorit dari Firestore
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio:
+                              0.54, // Proporsi pas untuk mockup card vertikal
+                          crossAxisSpacing: 15,
+                          mainAxisSpacing: 15,
+                        ),
+                    itemCount: wishlistDocs.length,
+                    itemBuilder: (context, index) {
+                      final docId = wishlistDocs[index].id;
+                      final item =
+                          wishlistDocs[index].data() as Map<String, dynamic>;
+                      return _buildWishlistCard(docId, item);
+                    },
+                  ),
+                  const SizedBox(height: 30),
+                ],
               ),
             ),
+          );
+        },
+      ),
     );
   }
 
-  // Widget untuk Kartu Buku
-  Widget _buildWishlistCard(Map<String, dynamic> item, int index) {
+  // 🟢 WIDGET KARTU BUKU DIADAPTASI UNTUK FIRESTORE
+  Widget _buildWishlistCard(String docId, Map<String, dynamic> item) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -172,7 +167,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gambar Buku / Sampul
+          // Gambar Buku / Sampul (Network Image dari Cloudinary/Firestore URL)
           Expanded(
             child: Container(
               width: double.infinity,
@@ -182,14 +177,26 @@ class _WishlistScreenState extends State<WishlistScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  item['image'],
-                  fit: BoxFit.cover,
-                  // Fallback jika asset gambar belum didaftarkan di pubspec.yaml
-                  errorBuilder: (c, e, s) => const Center(
-                    child: Icon(Icons.book, color: Color(0xFF4A352F), size: 40),
-                  ),
-                ),
+                child:
+                    item['image'] != null && item['image'].toString().isNotEmpty
+                    ? Image.network(
+                        item['image'],
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => const Center(
+                          child: Icon(
+                            Icons.book,
+                            color: Color(0xFF4A352F),
+                            size: 40,
+                          ),
+                        ),
+                      )
+                    : const Center(
+                        child: Icon(
+                          Icons.book,
+                          color: Color(0xFF4A352F),
+                          size: 40,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -201,7 +208,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
             children: [
               Expanded(
                 child: Text(
-                  item['title'],
+                  item['title'] ?? 'Tanpa Judul',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.montserrat(
@@ -213,24 +220,17 @@ class _WishlistScreenState extends State<WishlistScreen> {
               ),
               GestureDetector(
                 onTap: () {
-                  setState(() {
-                    // Jika di-unliked, item langsung hilang dari daftar wishlist
-                    _wishlistBooks.removeAt(index);
-                  });
+                  // 🟢 Langsung update field di Firestore, item otomatis hilang karena Stream
+                  removeFromWishlist(docId);
                 },
-                child: const Icon(
-                  Icons.favorite,
-                  size: 18,
-                  color: Colors
-                      .red, // Selalu merah karena berada di halaman Wishlist
-                ),
+                child: const Icon(Icons.favorite, size: 18, color: Colors.red),
               ),
             ],
           ),
 
           // Penulis Buku
           Text(
-            item['author'],
+            item['author'] ?? 'Anonim',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.montserrat(
@@ -240,9 +240,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
           ),
           const SizedBox(height: 4),
 
-          // Harga Produk
+          // Harga Produk (Menggunakan Helper Format Rupiah)
           Text(
-            item['price'],
+            formatRupiah(item['price'] ?? '0'),
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -251,7 +251,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
           ),
           const SizedBox(height: 6),
 
-          // Informasi Toko Penjual dan Rating Bintang
+          // Informasi Toko Penjual Dinamis dan Rating Bintang
           Row(
             children: [
               const CircleAvatar(
@@ -262,7 +262,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  item['seller'],
+                  item['storeName'] ??
+                      'Toko Buku', // Menggunakan storeName dinamis
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.montserrat(
@@ -275,7 +276,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
               const Icon(Icons.star, color: Colors.amber, size: 12),
               const SizedBox(width: 2),
               Text(
-                item['rating'],
+                item['rating']?.toString() ?? '0.0',
                 style: GoogleFonts.montserrat(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -289,7 +290,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
     );
   }
 
-  // State tampilan jika seluruh item wishlist dihapus oleh user
+  // Tampilan jika seluruh item wishlist kosong
   Widget _buildEmptyState() {
     return Center(
       child: Column(

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/gestures.dart';
 import 'login_screen.dart';
 import 'package:provider/provider.dart';
-
+import '../../main_screen.dart';
 import '../../viewmodel/auth_viewmodel.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -26,6 +27,104 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // 🟢 FUNGSI UNTUK MENAMPILKAN POP-UP TERMS & CONDITIONS
+  void _showTermsAndConditionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFFFFDF2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Terms & Conditions',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF8F4F17),
+            ),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '1. Penggunaan Layanan',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF42210B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Dengan mendaftar, Anda setuju untuk menggunakan aplikasi penjelajah buku ini dengan bijak dan mematuhi seluruh hukum yang berlaku.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      color: const Color(0xFF6B4E37),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '2. Privasi Akun',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF42210B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Kami berkomitmen menjaga kerahasiaan data pribadi Anda. Password Anda dienkripsi dengan aman melalui sistem integrasi Firebase Firebase Auth.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      color: const Color(0xFF6B4E37),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '3. Hak Kekayaan Intelektual',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF42210B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Seluruh konten informasi buku, cover, dan data yang disajikan dilindungi oleh hak cipta penerbit masing-masing.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      color: const Color(0xFF6B4E37),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8F4F17),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(
+                'Saya Mengerti',
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -160,6 +259,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 fontWeight: FontWeight.w600,
                                 decoration: TextDecoration.underline,
                               ),
+                              // Menggunakan TapGestureRecognizer agar teks bisa merespon sentuhan
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  _showTermsAndConditionsDialog();
+                                },
                             ),
                           ],
                         ),
@@ -168,7 +272,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Tombol Sign In / Register
+                  // Tombol Sign In (Sesuai teks di tombol gambar kamu)
                   SizedBox(
                     width: double.infinity,
                     height: 55,
@@ -235,7 +339,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        'Sign In', // Menjaga konsistensi sesuai desain Figma kelompokmu
+                        'Sign In', // Sesuai desain Figma kamu
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -275,11 +379,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Tombol Media Sosial (Sekaruh Hanya Google)
+                  // Tombol Media Sosial
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.g_mobiledata, size: 45, color: Colors.orange),
+                    children: [
+                      const Icon(
+                        Icons.facebook,
+                        size: 32,
+                        color: Color(0xFF1877F2),
+                      ),
+                      const SizedBox(width: 25),
+                      const Icon(
+                        Icons.g_mobiledata,
+                        size: 45,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 25),
+                      const Icon(Icons.apple, size: 32, color: Colors.black),
                     ],
                   ),
                   const SizedBox(height: 40),
@@ -326,64 +442,87 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Reusable Input Field Widget
-  Widget _buildInputField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    bool isPassword = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-          child: Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF42210B),
-            ),
+  // Reusable Input Field
+  // Reusable Input Field
+Widget _buildInputField({
+  required String label,
+  required String hint,
+  required TextEditingController controller,
+  bool isPassword = false,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(
+          left: 4.0,
+          bottom: 8.0,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF42210B),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5EFE6).withOpacity(0.6),
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword ? _isPasswordHidden : false,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: GoogleFonts.montserrat(
-                color: const Color(0xFFB3A699),
-                fontSize: 14,
+      ),
+
+      Container(
+        decoration: BoxDecoration(
+          color: const Color(
+            0xFFF5EFE6,
+          ).withOpacity(0.6),
+          borderRadius:
+              BorderRadius.circular(30),
+        ),
+
+        child: TextField(
+          controller: controller,
+
+          obscureText: isPassword
+              ? _isPasswordHidden
+              : false,
+
+          decoration: InputDecoration(
+            hintText: hint,
+
+            hintStyle:
+                GoogleFonts.montserrat(
+              color: const Color(
+                0xFFB3A699,
               ),
-              suffixIcon: isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        _isPasswordHidden
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordHidden = !_isPasswordHidden;
-                        });
-                      },
-                    )
-                  : null,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 16,
-              ),
-              border: InputBorder.none,
+              fontSize: 14,
             ),
+
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _isPasswordHidden
+                          ? Icons
+                              .visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordHidden =
+                            !_isPasswordHidden;
+                      });
+                    },
+                  )
+                : null,
+
+            contentPadding:
+                const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 16,
+            ),
+
+            border: InputBorder.none,
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }

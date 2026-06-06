@@ -69,6 +69,60 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   // =========================
+  // 🟢 LOGIN WITH GOOGLE (VIEWMODEL)
+  // =========================
+  Future<bool> loginWithGoogle() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _currentUser = await _service.loginWithGoogle();
+      return _currentUser != null;
+    } catch (e) {
+      debugPrint('Google Login Error: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> checkCurrentUser() async {
+    try {
+      // Memanggil fungsi baru yang ada di AuthService
+      _currentUser = await _service.getCurrentUser();
+
+      if (_currentUser != null) {
+        notifyListeners();
+        return true; // Ada user yang login
+      }
+      return false; // Tidak ada user (null)
+    } catch (e) {
+      debugPrint("Error checking user di ViewModel: $e");
+      return false;
+    }
+  }
+
+  // =========================
+  // FORGOT PASSWORD (VIEWMODEL)
+  // =========================
+  Future<bool> forgotPassword({required String email}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _service.sendPasswordResetEmail(email: email);
+      return true; // Berhasil terkirim
+    } catch (e) {
+      debugPrint('Forgot Password Error: $e');
+      return false; // Gagal terkirim (misal email salah/tidak terdaftar)
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // =========================
   // LOGOUT
   // =========================
 

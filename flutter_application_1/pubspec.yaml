@@ -11,7 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Geser semua package di bawah ini ke kiri agar sejajar dengan kata "flutter:" di atas!
+  cloudinary_public: ^0.23.1
+  google_sign_in: ^7.2.0
   cupertino_icons: ^1.0.8
+
   google_fonts: ^6.2.1
   image_picker: ^1.2.2
   firebase_core: ^4.10.0
@@ -41,6 +45,7 @@ flutter:
     - assets/promo_summer.png
     - assets/promo_member.png
     - assets/promo_komik.png
+    - assets/google.png
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
@@ -61,4 +66,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-

@@ -15,10 +15,7 @@ class UserModel {
     this.website = '',
   });
 
-  factory UserModel.fromMap(
-    Map<String, dynamic> map,
-    String uid,
-  ) {
+  factory UserModel.fromMap(Map<String, dynamic> map, String uid) {
     return UserModel(
       uid: uid,
       name: map['name'] ?? '',

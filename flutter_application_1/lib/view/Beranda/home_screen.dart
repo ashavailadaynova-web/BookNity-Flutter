@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 👈 SUDAH DITAMBAHKAN
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'category_screen.dart';
 import '../message_screen.dart';
 import 'wishlist_screen.dart';
@@ -18,15 +18,48 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _bannerController = PageController();
   int _currentBanner = 0;
 
+  // 🟢 HELPER UTK FORMAT RUPIAH
+  String formatRupiah(String hargaRaw) {
+    if (hargaRaw.isEmpty) return 'Rp 0';
+    // Menghapus karakter non-angka jika ada
+    String cleanHarga = hargaRaw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanHarga.isEmpty) return 'Rp 0';
+
+    final value = int.tryParse(cleanHarga) ?? 0;
+    // Format manual ribuan tanpa package tambahan
+    String str = value.toString();
+    String result = '';
+    int count = 0;
+
+    for (int i = str.length - 1; i >= 0; i--) {
+      result = str[i] + result;
+      count++;
+      if (count == 3 && i != 0) {
+        result = '.$result';
+        count = 0;
+      }
+    }
+    return 'Rp $result';
+  }
+
+  // 🟢 FUNGSIONALITAS TOGGLE WISHLIST DI FIRESTORE
+  Future<void> toggleWishlist(String docId, bool currentStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('books').doc(docId).update({
+        'isFavorite': !currentStatus,
+      });
+    } catch (e) {
+      debugPrint('Gagal update wishlist: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(
-            bottom: 100, // Menghindari konten tertutup oleh navbar utama
-          ),
+          padding: const EdgeInsets.only(bottom: 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -315,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 5. Sedang Populer (MENGGUNAKAN STREAMBUILDER SEKARANG 🔥)
+  // 5. Sedang Populer
   Widget _buildSedangPopuler() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,14 +375,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: bookDocs.length,
                 itemBuilder: (context, index) {
+                  final docId =
+                      bookDocs[index].id; // Ambil ID Dokumen Firestore
                   final book = bookDocs[index].data() as Map<String, dynamic>;
+                  final bool favStatus = book['isFavorite'] ?? false;
+
                   return _buildCardBukuHorizontal(
+                    docId, // 🟢 Oper ID Dokumen
                     book['title'] ?? '',
                     book['author'] ?? '',
-                    book['price'] ?? '',
-                    book['rating'] ?? '0.0',
-                    book['isFavorite'] ?? false,
-                    book['imageUrl'] ?? '',
+                    formatRupiah(book['price'] ?? ''), // 🟢 Format Jadi Rp
+                    book['rating']?.toString() ?? '0.0',
+                    favStatus,
+                    book['image'] ?? '',
                     book['storeName'] ?? '',
                   );
                 },
@@ -381,7 +419,6 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: tabs.length,
             itemBuilder: (context, index) {
               bool isSelected = _selectedTab == index;
-
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -417,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 7. Daftar Buku Rekomendasi (MENGGUNAKAN STREAMBUILDER SEKARANG 🔥)
+  // 7. Daftar Buku Rekomendasi
   Widget _buildDaftarBukuRekomendasi() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -444,14 +481,19 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             itemCount: bookDocs.length,
             itemBuilder: (context, index) {
+              final docId = bookDocs[index].id; // Ambil ID Dokumen Firestore
               final book = bookDocs[index].data() as Map<String, dynamic>;
+              final bool favStatus = book['isFavorite'] ?? false;
+
               return _buildCardBukuVertikal(
+                docId, // 🟢 Oper ID Dokumen
                 book['title'] ?? '',
                 book['author'] ?? '',
-                book['price'] ?? '',
-                book['rating'] ?? '0.0',
+                formatRupiah(book['price'] ?? ''), // 🟢 Format Jadi Rp
+                book['rating']?.toString() ?? '0.0',
                 book['storeName'] ?? '',
-                book['imageUrl'] ?? '',
+                book['image'] ?? '',
+                favStatus, // 🟢 Oper Status Favorit
               );
             },
           );
@@ -490,6 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Helper Card untuk Bagian Atas (Sedang Populer)
   Widget _buildCardBukuHorizontal(
+    String docId,
     String judul,
     String penulis,
     String harga,
@@ -502,6 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: 140,
       margin: const EdgeInsets.only(right: 16),
       child: _buildKontenCard(
+        docId,
         judul,
         penulis,
         harga,
@@ -515,19 +559,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Helper Card untuk Bagian Bawah (Rekomendasi Untukmu)
   Widget _buildCardBukuVertikal(
+    String docId,
     String judul,
     String penulis,
     String harga,
     String rating,
     String namaToko,
     String pathGambar,
+    bool isFavorite,
   ) {
     return _buildKontenCard(
+      docId,
       judul,
       penulis,
       harga,
       rating,
-      false,
+      isFavorite,
       pathGambar,
       namaToko,
     );
@@ -535,6 +582,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Blueprint Utama penghubung ke BuyerProductCard widget
   Widget _buildKontenCard(
+    String docId,
     String judul,
     String penulis,
     String harga,
@@ -554,7 +602,10 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         Navigator.pushNamed(context, '/product_detail');
       },
-      onFavoriteTap: () {},
+      onFavoriteTap: () {
+        // 🟢 EKSEKUSI TOGGLE WISHLIST REAL-TIME KE FIRESTORE
+        toggleWishlist(docId, isFavorite);
+      },
     );
   }
 
