@@ -35,9 +35,7 @@ class AuthViewModel extends ChangeNotifier {
     } catch (e) {
       print("REGISTER ERROR = $e");
 
-      debugPrint(
-        'Register Error: $e',
-      );
+      debugPrint('Register Error: $e');
 
       return false;
     } finally {
@@ -50,26 +48,18 @@ class AuthViewModel extends ChangeNotifier {
   // LOGIN
   // =========================
 
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> login({required String email, required String password}) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      _currentUser = await _service.login(
-        email: email,
-        password: password,
-      );
+      _currentUser = await _service.login(email: email, password: password);
 
-      return _currentUser != null;
+      return true;
     } catch (e) {
       print("LOGIN ERROR = $e");
 
-      debugPrint(
-        'Login Error: $e',
-      );
+      debugPrint('Login Error: $e');
 
       return false;
     } finally {

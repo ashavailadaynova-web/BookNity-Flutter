@@ -5,7 +5,6 @@ import '../../main_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../viewmodel/auth_viewmodel.dart';
-import '../../main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -107,44 +106,41 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
 
                   // Input Password
-                 _buildInputField(
-                  label: 'Password',
-                  hint: 'Enter Password',
-                  controller: _passwordController,
-                  isPassword: true,
-                ),
+                  _buildInputField(
+                    label: 'Password',
+                    hint: 'Enter Password',
+                    controller: _passwordController,
+                    isPassword: true,
+                  ),
 
                   // Tombol Forgot Password
                   Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      'Forgot Password?',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF8F4F17),
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {},
+                      child: Text(
+                        'Forgot Password?',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF8F4F17),
+                        ),
                       ),
                     ),
                   ),
-                ),
                   const SizedBox(height: 15),
 
-                  // Tombol Log In Utama (Sudah Diperbarui Navigasinya!)
+                  // Tombol Log In Utama
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                     onPressed: () async {
-                        final authViewModel =
-                            context.read<AuthViewModel>();
+                      onPressed: () async {
+                        final authViewModel = context.read<AuthViewModel>();
 
-                        final success =
-                            await authViewModel.login(
+                        final success = await authViewModel.login(
                           email: _emailController.text.trim(),
-                          password:
-                              _passwordController.text.trim(),
+                          password: _passwordController.text.trim(),
                         );
 
                         if (!mounted) return;
@@ -153,18 +149,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const MainScreen(),
+                              builder: (_) => const MainScreen(),
                             ),
                             (route) => false,
                           );
                         } else {
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(
+                          ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text(
-                                'Email atau password salah',
-                              ),
+                              content: Text('Email atau password salah'),
                             ),
                           );
                         }
@@ -219,17 +211,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Tombol Media Sosial (Facebook, Google, Apple)
+                  // Tombol Media Sosial (Sekarang Hanya Google)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildSocialButton(
-                        'assets/facebook.png',
-                        isIconData: false,
-                        iconData: Icons.facebook,
-                        iconColor: const Color(0xFF1877F2),
-                      ),
-                      const SizedBox(width: 20),
                       _buildSocialButton(
                         'assets/google.png',
                         isIconData: false,
@@ -238,13 +223,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           size: 40,
                           color: Colors.orange,
                         ),
-                      ),
-                      const SizedBox(width: 20),
-                      _buildSocialButton(
-                        'assets/apple.png',
-                        isIconData: true,
-                        iconData: Icons.apple,
-                        iconColor: Colors.black,
                       ),
                     ],
                   ),
@@ -317,57 +295,43 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         Container(
           decoration: BoxDecoration(
-            color: const Color(
-              0xFFF5EFE6,
-            ).withOpacity(0.6), // Warna input abu/krem muda melengkung
+            color: const Color(0xFFF5EFE6).withOpacity(0.6),
             borderRadius: BorderRadius.circular(30),
           ),
           child: TextField(
-          controller: controller,
-
-          obscureText:
-              isPassword
-                  ? _isPasswordHidden
-                  : false,
-
-          decoration: InputDecoration(
-            hintText: hint,
-
-            hintStyle: GoogleFonts.montserrat(
-              color: const Color(0xFFB3A699),
-              fontSize: 14,
+            controller: controller,
+            obscureText: isPassword ? _isPasswordHidden : false,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.montserrat(
+                color: const Color(0xFFB3A699),
+                fontSize: 14,
+              ),
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        _isPasswordHidden
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordHidden = !_isPasswordHidden;
+                        });
+                      },
+                    )
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 16,
+              ),
+              border: InputBorder.none,
             ),
-
-            suffixIcon: isPassword
-                ? IconButton(
-                    icon: Icon(
-                      _isPasswordHidden
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordHidden =
-                            !_isPasswordHidden;
-                      });
-                    },
-                  )
-                : null,
-
-            contentPadding:
-                const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 16,
-            ),
-
-            border: InputBorder.none,
           ),
         ),
-                ),
-              ],
-              
-            );
-          }
+      ],
+    );
+  }
 
   // Helper Widget untuk Tombol Sosial Media
   Widget _buildSocialButton(
