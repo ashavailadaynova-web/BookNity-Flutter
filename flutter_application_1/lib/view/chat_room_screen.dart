@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../model/chat_model.dart';
+import '../viewmodel/chat_viewmodel.dart';
 
 class ChatRoomScreen extends StatefulWidget {
-  const ChatRoomScreen({super.key});
+  final String
+  sellerId; // 🟢 Mengikuti request halaman Detail: Cukup oper sellerId
+
+  const ChatRoomScreen({super.key, required this.sellerId});
 
   @override
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
@@ -12,48 +17,15 @@ class ChatRoomScreen extends StatefulWidget {
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final TextEditingController controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
-  final List<MessageModel> messages = [
-    MessageModel(
-      type: MessageType.offerPending,
-      isMe: true,
-      time: "10:45 AM",
-      bookTitle: "Laut Bercerita",
-      author: "Leila S Chudori",
-      price: "55.000",
-      cover: "https://covers.openlibrary.org/b/id/14613167-L.jpg",
-    ),
-    MessageModel(
-      text: "Mohon tunggu respon penawaran dari penjual",
-      isMe: false,
-      time: "10:46 AM",
-    ),
-    MessageModel(
-      text:
-          "Halo kak, terima kasih sudah berkunjung di Toko kami. Untuk tawaran buku Laut Bercerita kami terima ya.",
-      isMe: false,
-      time: "11:00 AM",
-    ),
-    MessageModel(
-      type: MessageType.offerAccepted,
-      isMe: false,
-      time: "11:00 AM",
-      bookTitle: "Laut Bercerita",
-      author: "Leila S Chudori",
-      price: "55.000",
-      cover: "https://covers.openlibrary.org/b/id/14613167-L.jpg",
-    ),
-    MessageModel(
-      text: "Hai Kak Aceng, baik saya akan melanjutkan ke pembayaran",
-      isMe: true,
-      time: "11:12 AM",
-    ),
-  ];
+  late String roomId;
 
   @override
   void initState() {
     super.initState();
-    // Berikan sedikit delay agar ListView selesai dirender sebelum scroll ke bawah
+    // Generate roomId otomatis menggunakan ID Pembeli (current) dan ID Penjual
+    final chatVm = Provider.of<ChatViewModel>(context, listen: false);
+    roomId = chatVm.getRoomId(chatVm.currentUserId, widget.sellerId);
+
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _scrollToBottom(animated: false),
     );
@@ -81,21 +53,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _sendMessage() {
+    // 🟢 PASTIKAN KOSONG TANPA PARAMETER
     final text = controller.text.trim();
     if (text.isEmpty) return;
 
-    setState(() {
-      messages.add(
-        MessageModel(
-          text: text,
-          isMe: true,
-          time: "11:13 AM", // Nanti bisa disesuaikan dengan format waktu asli
-        ),
-      );
-    });
+    // Mengambil chatVm langsung menggunakan context di dalam fungsi
+    final chatVm = Provider.of<ChatViewModel>(context, listen: false);
+    chatVm.sendMessage(roomId: roomId, text: text);
 
     controller.clear();
-    // Pemicu scroll otomatis ke bawah setelah frame pesan baru selesai dirender
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
@@ -124,11 +90,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-
-                    /// nanti fungsi kamera
-                  },
+                  onTap: () => Navigator.pop(context),
                 ),
                 ListTile(
                   leading: const Icon(
@@ -141,11 +103,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-
-                    /// nanti fungsi galeri
-                  },
+                  onTap: () => Navigator.pop(context),
                 ),
               ],
             ),
@@ -155,160 +113,114 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  Widget _buildCustomOfferMessage(MessageModel message) {
-    if (message.type == MessageType.offerPending) {
-      return Container(
-        width: 215,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xffE8DFC7),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                message.cover ?? '',
-                width: 55,
-                height: 75,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.book, size: 55),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "MENUNGGU PENAWARAN",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xffC45A1A),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Penawaran kamu",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      color: const Color(0xffC45A1A),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    message.bookTitle ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    "oleh ${message.author ?? ''}",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Rp. ${message.price ?? ''}",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+  Widget _buildCustomOfferMessage(MessageModel message, ChatViewModel chatVm) {
+    bool isPending = message.type == MessageType.offerPending;
 
-    if (message.type == MessageType.offerAccepted) {
-      return Container(
-        width: 255,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xffE8DFC7),
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Column(
-          children: [
-            Text(
-              "PENAWARAN DITERIMA",
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xffC45A1A),
+    return Container(
+      width: 255,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xffE8DFC7),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          Text(
+            isPending ? "MENUNGGU PENAWARAN" : "PENAWARAN DITERIMA",
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xffC45A1A),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  message.cover ?? '',
+                  width: 55,
+                  height: 75,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.book, size: 55),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    message.cover ?? '',
-                    width: 50,
-                    height: 70,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.book, size: 50),
-                  ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message.bookTitle ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      "oleh ${message.author ?? ''}",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Rp. ${message.price ?? ''}",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Dengan Penawaran",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          color: const Color(0xffC45A1A),
-                        ),
-                      ),
-                      Text(
-                        message.bookTitle ?? '',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        "oleh ${message.author ?? ''}",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      Text(
-                        "Rp. ${message.price ?? ''}",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          if (isPending && !message.isMe) ...[
             const SizedBox(height: 12),
             SizedBox(
-              width: 150,
+              width: 160,
+              height: 34,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (message.id != null) {
+                    chatVm.updateOfferStatus(
+                      roomId: roomId,
+                      messageId: message.id!,
+                      newStatus: MessageType.offerAccepted,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xffB64B1E),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: Text(
+                  "Terima Penawaran",
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ] else if (!isPending) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: 180,
               height: 34,
               child: ElevatedButton(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  elevation: 0,
                   backgroundColor: const Color(0xffB64B1E),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -325,184 +237,157 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
             ),
           ],
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final chatVm = Provider.of<ChatViewModel>(context, listen: false);
+
     return Scaffold(
       backgroundColor: const Color(0xffF9F6EE),
       appBar: AppBar(
-        title: const Text("Chat Room"),
         backgroundColor: const Color(0xff4A241B),
         foregroundColor: Colors.white,
+        titleSpacing: 0, // Agar foto profil dekat dengan tombol back
+        title: FutureBuilder<Map<String, dynamic>?>(
+          // Kita panggil fungsi ambil data penjual dari ViewModel (akan dibuat di Langkah 2)
+          future: chatVm.getSellerProfile(widget.sellerId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text("Memuat...");
+            }
+
+            // Ambil data nama dan foto, beri nilai default jika data di Firestore kosong
+            final sellerData = snapshot.data;
+            final sellerName =
+                sellerData?['name'] ?? sellerData?['username'] ?? "Penjual";
+            final sellerAvatar =
+                sellerData?['avatarUrl'] ?? sellerData?['photoUrl'] ?? "";
+
+            return Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.grey.shade300,
+                  backgroundImage: sellerAvatar.isNotEmpty
+                      ? NetworkImage(sellerAvatar)
+                      : null,
+                  child: sellerAvatar.isEmpty
+                      ? const Icon(Icons.person, color: Colors.white, size: 20)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      sellerName,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      "Online", // Opsional, bisa diganti status lain
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        color: Colors.greenAccent,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
       body: Column(
         children: [
           const SizedBox(height: 10),
-
-          /// DATE
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xffEFE7D7),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                "SABTU, 11 APRIL",
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xff7D7065),
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          /// PRODUCT CARD AT TOP
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              margin: const EdgeInsets.only(left: 24),
-              width: 180,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xffE7DFC7),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      "https://covers.openlibrary.org/b/id/14613167-L.jpg",
-                      width: 56,
-                      height: 76,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Produk kamu",
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xffD36A1D),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "Teka Teki Rumah Aneh",
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xff2D2D2D),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "Oleh Uketsu",
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 10,
-                            color: const Color(0xff777777),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "Rp. 45.000",
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xff2D2D2D),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          /// MESSAGES LISTVIEW
           Expanded(
-            child: ListView.builder(
-              controller:
-                  _scrollController, // ScrollController dipasang di sini
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                bool isOffer =
-                    message.type == MessageType.offerPending ||
-                    message.type == MessageType.offerAccepted;
+            child: StreamBuilder<List<MessageModel>>(
+              stream: chatVm.streamMessages(roomId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text("Belum ada pesan."));
+                }
 
-                return Align(
-                  alignment: message.isMe
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment: message.isMe
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    children: [
-                      isOffer
-                          ? _buildCustomOfferMessage(message)
-                          : Container(
-                              constraints: const BoxConstraints(maxWidth: 260),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: message.isMe
-                                    ? const Color(0xff4A241B)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              child: Text(
-                                message.text ?? '',
-                                style: GoogleFonts.plusJakartaSans(
-                                  color: message.isMe
-                                      ? Colors.white
-                                      : Colors.black,
-                                  fontSize: 14,
+                final firebaseMessages = snapshot.data!;
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => _scrollToBottom(),
+                );
+
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: firebaseMessages.length,
+                  itemBuilder: (context, index) {
+                    final message = firebaseMessages[index];
+                    bool isOffer =
+                        message.type == MessageType.offerPending ||
+                        message.type == MessageType.offerAccepted;
+
+                    return Align(
+                      alignment: message.isMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: message.isMe
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                        children: [
+                          isOffer
+                              ? _buildCustomOfferMessage(message, chatVm)
+                              : Container(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 260,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: message.isMe
+                                        ? const Color(0xff4A241B)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: Text(
+                                    message.message,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      color: message.isMe
+                                          ? Colors.white
+                                          : Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                          const SizedBox(height: 6),
+                          Text(
+                            message.time,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              color: const Color(0xffB4AEA8),
                             ),
-                      const SizedBox(height: 6),
-                      Text(
-                        message.time,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10,
-                          color: const Color(0xffB4AEA8),
-                        ),
+                          ),
+                          const SizedBox(height: 18),
+                        ],
                       ),
-                      const SizedBox(height: 18),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),
           ),
-
-          /// INPUT CHAT BAR
           Container(
             margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -512,7 +397,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -529,7 +414,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   child: TextField(
                     controller: controller,
                     onSubmitted: (_) =>
-                        _sendMessage(), // Bisa kirim via tombol 'enter/done' keyboard
+                        _sendMessage(), // 🟢 DIUBAH: Hapus (chatVm)
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: "Type a message...",
@@ -546,7 +431,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 ),
                 const SizedBox(width: 8),
                 InkWell(
-                  onTap: _sendMessage, // Fungsi kirim saat icon send diklik
+                  onTap: () =>
+                      _sendMessage(), // 🟢 DIGANTI: dari onPressed menjadi onTap
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     width: 40,

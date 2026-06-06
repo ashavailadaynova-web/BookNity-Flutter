@@ -55,7 +55,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _currentUser = await _service.login(email: email, password: password);
 
-      return _currentUser != null;
+      return true;
     } catch (e) {
       print("LOGIN ERROR = $e");
 

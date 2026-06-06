@@ -1,110 +1,155 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../model/chat_model.dart';
-import '../model/book_model.dart';
 
 class ChatViewModel extends ChangeNotifier {
-  // Simulasi database chat room lokal / Firebase stream
-  final List<MessageModel> _messages = [];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  List<MessageModel> get messages => _messages;
+  // Mendapatkan ID Pengguna Aktif dari Firebase Auth
+  String get currentUserId => _auth.currentUser?.uid ?? "USER_DUMMY_ID";
 
-  // 1. Fungsi Kirim Chat Biasa / Bawa Informasi Produk (Klik Icon Chat Shopee)
-  void sendMessage({
-    required String text,
-    BookModel? attachedBook,
-    bool isProductInfo = false,
-  }) {
-    final now = DateTime.now();
-    final timeString =
-        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
-
-    if (isProductInfo && attachedBook != null) {
-      // Mengirimkan pesan bentuk info produk bawaan di awal chat
-      _messages.add(
-        MessageModel(
-          isMe: true,
-          time: timeString,
-          type: MessageType.text,
-          bookTitle: attachedBook.title,
-          author: attachedBook.author,
-          cover: attachedBook.image,
-          price: attachedBook.price,
-          text: "Halo, saya tertarik dengan buku ini!",
-        ),
-      );
-    } else {
-      _messages.add(
-        MessageModel(
-          text: text,
-          isMe: true,
-          time: timeString,
-          type: MessageType.text,
-        ),
-      );
-    }
-    notifyListeners();
+  // Helper untuk membuat Room ID unik antara Pembeli & Penjual
+  String getRoomId(String userA, String userB) {
+    List<String> ids = [userA, userB];
+    ids.sort(); // Diurutkan agar ID Room bernilai sama bagi pembeli maupun penjual
+    return ids.join("_");
   }
 
-  // 2. Fungsi Kirim Pesan Tawar Produk
-  void sendOfferMessage({
-    required BookModel book,
-    required String offeredPrice,
-  }) {
-    final now = DateTime.now();
-    final timeString =
-        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+  // Alias helper jika halaman lain memanggil getChatRoomId
+  String getChatRoomId(String userA, String userB) => getRoomId(userA, userB);
 
-    _messages.add(
-      MessageModel(
-        isMe: true, // Dikirim oleh pembeli
-        time: timeString,
-        type: MessageType.offerPending, // Status awal: Menunggu Tanggapan
-        bookTitle: book.title,
-        author: book.author,
-        cover: book.image,
-        price: offeredPrice, // Harga yang diajukan
-      ),
+  // STREAM: Mengambil data chat secara Real-Time dari Firestore
+  Stream<List<MessageModel>> streamMessages(String roomId) {
+    return _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => MessageModel.fromFirestore(doc, currentUserId))
+              .toList();
+        });
+  }
+
+  // Fungsi Kirim Chat Biasa
+  Future<void> sendMessage({
+    required String roomId,
+    required String text,
+  }) async {
+    if (text.trim().isEmpty) return;
+    final now = DateTime.now();
+
+    final newMessage = MessageModel(
+      senderId: currentUserId,
+      message: text.trim(),
+      timestamp: now,
+      type: MessageType.text,
     );
 
-    notifyListeners();
-
-    // SIMULASI OTOMATIS: Anggap dalam 3 detik Penjual membalas secara acak (Untuk testing UI)
-    _simulateSellerResponse();
+    await _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .add(newMessage.toMap());
   }
 
-  // 3. Fungsi Update Status Tawaran (Diterima / Ditolak oleh Penjual)
-  void updateOfferStatus(int index, MessageType newStatus) {
-    if (index >= 0 && index < _messages.length) {
-      final oldMsg = _messages[index];
+  Future<Map<String, dynamic>?> getSellerProfile(String sellerId) async {
+    try {
+      // Sesuaikan nama collection 'users' dengan nama collection user di Firebase milikmu
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(sellerId)
+          .get();
 
-      // Ganti tipe data offer-nya
-      _messages[index] = MessageModel(
-        isMe: oldMsg.isMe,
-        time: oldMsg.time,
-        type: newStatus,
-        bookTitle: oldMsg.bookTitle,
-        author: oldMsg.author,
-        cover: oldMsg.cover,
-        price: oldMsg.price,
-        text: newStatus == MessageType.offerAccepted
-            ? "Penawaran Anda telah diterima oleh Penjual!"
-            : "Penawaran Anda ditolak oleh Penjual.",
-      );
-      notifyListeners();
-    }
-  }
-
-  void _simulateSellerResponse() {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (_messages.isNotEmpty) {
-        // Cari index tawar terakhir, ubah seolah diterima penjual
-        for (int i = _messages.length - 1; i >= 0; i--) {
-          if (_messages[i].type == MessageType.offerPending) {
-            updateOfferStatus(i, MessageType.offerAccepted);
-            break;
-          }
-        }
+      if (doc.exists) {
+        return doc.data() as Map<String, dynamic>;
       }
-    });
+    } catch (e) {
+      print("Error fetching seller profile: $e");
+    }
+    return null;
+  }
+
+  // 🟢 PERBAIKAN ERROR 2: Fungsi sendProductOffer dengan parameter lengkap
+  Future<void> sendProductOffer({
+    required String sellerId,
+    required String bookId,
+    required String title,
+    required String author,
+    required String image,
+    required int originalPrice,
+    required int offeredPrice,
+  }) async {
+    final now = DateTime.now();
+    String roomId = getRoomId(currentUserId, sellerId);
+
+    final newOffer = MessageModel(
+      senderId: currentUserId,
+      message: "Mengajukan penawaran harga",
+      timestamp: now,
+      type: MessageType.offerPending,
+      bookTitle: title,
+      author: author,
+      cover: image,
+      price: offeredPrice.toString(), // Disimpan sebagai string penawaran
+    );
+
+    await _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .add(newOffer.toMap());
+  }
+
+  // 🟢 PERBAIKAN ERROR 5: Fungsi sendProductPreview dengan parameter lengkap
+  Future<void> sendProductPreview({
+    required String sellerId,
+    required String bookId,
+    required String title,
+    required String author,
+    required String image,
+    required int price,
+  }) async {
+    final now = DateTime.now();
+    String roomId = getRoomId(currentUserId, sellerId);
+
+    final previewMessage = MessageModel(
+      senderId: currentUserId,
+      message: "Halo, saya tertarik dengan buku ini!",
+      timestamp: now,
+      type: MessageType.text,
+      bookTitle: title,
+      author: author,
+      cover: image,
+      price: price.toString(),
+    );
+
+    await _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .add(previewMessage.toMap());
+  }
+
+  // Fungsi Update Status Tawaran (Diterima / Ditolak oleh Penjual) di Firestore
+  Future<void> updateOfferStatus({
+    required String roomId,
+    required String messageId,
+    required MessageType newStatus,
+  }) async {
+    String noticeText = newStatus == MessageType.offerAccepted
+        ? "Penawaran Anda telah diterima oleh Penjual!"
+        : "Penawaran Anda ditolak oleh Penjual.";
+
+    await _firestore
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .doc(messageId)
+        .update({'type': newStatus.name, 'message': noticeText});
   }
 }
