@@ -9,32 +9,6 @@ class PesananViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // ===========================================================================
-  // 📄 DATA TIRUAN (MOCK DATA) YANG DIBUTUHKAN OLEH PESANAN_SCREEN
-  // ===========================================================================
-  List<Map<String, dynamic>> ongoingOrders = [
-    {
-      'title': 'Bumi Manusia',
-      'author': 'Pramoedya Ananta Toer',
-      'price': 'Rp 95.000',
-      'status': 'Dikirim',
-      'statusColor': const Color(0xFFC76E2E),
-      'image': 'assets/images/bumi_manusia.png'
-    }
-  ];
-
-  List<Map<String, dynamic>> completedOrders = [
-    {
-      'title': 'Laskar Pelangi',
-      'author': 'Andrea Hirata',
-      'price': 'Rp 89.000',
-      'date': '20 Mei 2026',
-      'image': 'assets/images/laskar_pelangi.png'
-    }
-  ];
-
-  List<Map<String, dynamic>> cancelledOrders = [];
-
-  // ===========================================================================
   // 🔥 FUNGSI UTAMA UNTUK DATABASE/FIRESTORE
   // ===========================================================================
 
@@ -44,7 +18,7 @@ class PesananViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _firestore.collection('pesanan').add(order.toMap());
+      await _firestore.collection('orders').add(order.toMap());
       print("Pesanan berhasil dibuat di Firestore!");
     } catch (e) {
       print("Gagal membuat pesanan: $e");
@@ -54,9 +28,10 @@ class PesananViewModel extends ChangeNotifier {
     }
   }
 
-  // 2. TAMBAHAN: Fungsi kirim ulasan dari Bottom Sheet ke Firestore
+  // 2. REVISI: Fungsi kirim ulasan Toko/Penjual ke Firestore
   Future<void> kirimUlasanKeDatabase({
-    required String judulBuku,
+    required String sellerId, // Menampung ID penjual/toko yang diulas
+    required String judulBuku, // Tetap dicatat sebagai referensi transaksi buku apa
     required int rating,
     required String deskripsi,
     required bool denganFoto,
@@ -65,17 +40,18 @@ class PesananViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Menyimpan data ulasan ke dalam collection 'ulasan' di Firestore
-      await _firestore.collection('ulasan').add({
-        'judul_buku': judulBuku,
+      // Menyimpan data ulasan ke dalam collection 'reviews'
+      await _firestore.collection('reviews').add({
+        'sellerId': sellerId,
+        'judul_buku_referensi': judulBuku,
         'rating': rating,
         'deskripsi': deskripsi,
         'dengan_foto': denganFoto,
         'tanggal_ulasan': FieldValue.serverTimestamp(),
       });
-      print("Ulasan buku $judulBuku berhasil disimpan di Firestore!");
+      print("Ulasan untuk toko $sellerId berhasil disimpan di Firestore!");
     } catch (e) {
-      print("Gagal menyimpan ulasan: $e");
+      print("Gagal menyimpan ulasan toko: $e");
     } finally {
       _isLoading = false;
       notifyListeners();

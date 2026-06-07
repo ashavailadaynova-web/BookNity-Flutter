@@ -1,22 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../model/book_model.dart';
+import '../../viewmodel/chat_viewmodel.dart';
+import '../chat_room_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
-  const PaymentScreen({Key? key}) : super(key: key);
+  final BookModel book;
+
+  const PaymentScreen({Key? key, required this.book}) : super(key: key);
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  // State untuk memilih kurir pengiriman (JNE atau SiCepat)
   String _selectedCourier = 'jne';
+
+  final _addressController = TextEditingController(
+    text: 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan, DKI Jakarta 12190',
+  );
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  double _parsePrice(String priceStr) {
+    final cleanStr = priceStr.replaceAll('Rp', '').replaceAll('.', '').replaceAll(',', '').trim();
+    return double.tryParse(cleanStr) ?? 0.0;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFFFFDF9,
-      ), // Background krem muda khas Booknity
+      backgroundColor: const Color(0xFFFFFDF9),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFDF9),
         elevation: 0,
@@ -39,7 +57,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- HEADER TITLE ---
             const Text(
               'Selesaikan Pesananmu',
               textAlign: TextAlign.center,
@@ -62,15 +79,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 24),
 
-            // --- KARTU PRODUK BUKU ---
             _buildBookInfoCard(),
             const SizedBox(height: 16),
 
-            // --- KARTU ALAMAT RUMAH ---
             _buildAddressCard(),
             const SizedBox(height: 24),
 
-            // --- SEKSI ONGKIR PENGIRIMAN ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
@@ -113,23 +127,65 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             const SizedBox(height: 24),
 
-            // --- RINCIAN PEMBAYARAN ---
             _buildPaymentDetails(),
             const SizedBox(height: 24),
 
-            // --- INSTRUKSI PEMBAYARAN ---
             _buildPaymentInstructions(),
             const SizedBox(height: 32),
 
-            // --- TOMBOL KONFIRMASI UTAMA ---
             ElevatedButton(
-              onPressed: () {
-                // Tambahkan fungsi aksi submit kelompokmu di sini
+              onPressed: () async {
+                if (_addressController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Harap isi alamat pengiriman terlebih dahulu!'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                  return;
+                }
+
+                String alamatFinal = _addressController.text.trim();
+                int shippingCost = _selectedCourier == 'jne' ? 10000 : 7000;
+                double bookPrice = _parsePrice(widget.book.price);
+                double serviceFee = 2500;
+                double totalBayar = bookPrice + shippingCost + serviceFee;
+                String kurirName = _selectedCourier == 'jne' ? 'JNE Express' : 'SiCepat Reguler';
+
+                String totalBayarFormated = totalBayar.toInt().toString().replaceAllMapped(
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Membuka chat penjual dan mengirim invoice...')),
+                );
+
+                final chatVm = Provider.of<ChatViewModel>(context, listen: false);
+                String roomId = chatVm.getRoomId(chatVm.currentUserId, widget.book.sellerId);
+
+                await chatVm.sendInvoiceMessage(
+                  roomId: roomId,
+                  address: "Kurir: $kurirName\nAlamat: $alamatFinal",
+                  title: widget.book.title,
+                  author: widget.book.author ?? "Unknown Author",
+                  image: widget.book.image,
+                  totalPrice: totalBayarFormated,
+                );
+
+                if (context.mounted) {
+                  // 🟢 REVISI: Menggunakan pushAndRemoveUntil agar saat di-back langsung balik ke Inbox Utama (Page Pertama)
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatRoomScreen(
+                        sellerId: widget.book.sellerId,
+                      ),
+                    ),
+                    (route) => route.isFirst,
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(
-                  0xFF9E3422,
-                ), // Warna merah bata tua
+                backgroundColor: const Color(0xFF9E3422),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
@@ -152,31 +208,37 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // Widget 1: Info Buku Laut Bercerita
   Widget _buildBookInfoCard() {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFEBE4), // Background abu-krem kalem lembut
+        color: const Color(0xFFEFEBE4),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              'https://picsum.photos/seed/book/100/140', // Ganti dengan aset gambar asli kelompokmu jika ada
-              width: 70,
-              height: 100,
-              fit: BoxFit.cover,
-            ),
+            child: widget.book.image.startsWith('http')
+                ? Image.network(
+                    widget.book.image,
+                    width: 70,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    widget.book.image,
+                    width: 70,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'PENAWARAN DITERIMA',
                   style: TextStyle(
                     color: Color(0xFFD32F2F),
@@ -185,32 +247,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Laut Bercerita',
-                  style: TextStyle(
+                  widget.book.title,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   'Terjual dari:',
                   style: TextStyle(color: Colors.black45, fontSize: 11),
                 ),
                 Text(
-                  'Toko Buku Aceng',
-                  style: TextStyle(
+                  widget.book.storeName,
+                  style: const TextStyle(
                     color: Colors.black87,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
-                  'Rp 55.000',
-                  style: TextStyle(
+                  widget.book.price.startsWith('Rp') ? widget.book.price : 'Rp ${widget.book.price}',
+                  style: const TextStyle(
                     color: Color(0xFF9E3422),
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -224,19 +286,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // Widget 2: Alamat Rumah
   Widget _buildAddressCard() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAF6F0),
-        borderRadius: BorderRadius.circular(16),
-        border: const Border(
+      decoration: const BoxDecoration(
+        color: Color(0xFFFAF6F0),
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+        border: Border(
           left: BorderSide(
-            color: Color(
-              0xFFD7CCC8,
-            ), // Warna cokelat/krem agak tua sesuai mockup asli
-            width: 5, // Ketebalan garis border kiri
+            color: Color(0xFFD7CCC8),
+            width: 5,
           ),
         ),
       ),
@@ -270,17 +332,36 @@ class _PaymentScreenState extends State<PaymentScreen> {
               color: Color(0xFF1A1A1A),
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Jl. Senopati No. 42, Kebayoran Baru\nJakarta Selatan, DKI Jakarta 12190\n(+62) 812-3456-7890',
-            style: TextStyle(color: Colors.black54, fontSize: 12, height: 1.4),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _addressController,
+            maxLines: 3,
+            style: const TextStyle(
+              color: Color(0xFF1A1A1A),
+              fontSize: 12,
+              height: 1.4,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Masukkan alamat lengkap beserta nomor HP aktif...',
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.all(12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF9E3422), width: 1.5),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Widget 3: Opsi Pilihan Ongkir (Custom Radio Card)
   Widget _buildCourierOption({
     required String id,
     required String title,
@@ -302,9 +383,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : const Color(0xFFEBE6DD),
           borderRadius: BorderRadius.circular(16),
-          border: isSelected
-              ? Border.all(color: const Color(0xFF9E3422), width: 1.5)
-              : null,
+          border: isSelected ? Border.all(color: const Color(0xFF9E3422), width: 1.5) : null,
         ),
         child: Row(
           children: [
@@ -342,17 +421,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
               children: [
                 Text(
                   price,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: const Color(0xFF9E3422),
+                    color: Color(0xFF9E3422),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Icon(
-                  isSelected
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
                   size: 16,
                   color: isSelected ? const Color(0xFF9E3422) : Colors.black26,
                 ),
@@ -364,13 +441,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // Widget 4: Rincian Harga Pembayaran
   Widget _buildPaymentDetails() {
-    // Menghitung ongkir dinamis berdasarkan kurir yang dipilih
     int shippingCost = _selectedCourier == 'jne' ? 10000 : 7000;
-    int bookPrice = 55000;
-    int serviceFee = 2500;
-    int total = bookPrice + shippingCost + serviceFee;
+    double bookPrice = _parsePrice(widget.book.price);
+    double serviceFee = 2500;
+    double total = bookPrice + shippingCost + serviceFee;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -390,11 +465,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildDetailRow('Harga Buku', 'Rp 55.000'),
-          _buildDetailRow(
-            'Ongkir Pengiriman',
-            'Rp ${shippingCost == 10000 ? "10.000" : "7.000"}',
-          ),
+          _buildDetailRow('Harga Buku', widget.book.price.startsWith('Rp') ? widget.book.price : 'Rp ${widget.book.price}'),
+          _buildDetailRow('Ongkir Pengiriman', 'Rp ${shippingCost == 10000 ? "10.000" : "7.000"}'),
           _buildDetailRow('Biaya Layanan', 'Rp 2.500'),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -412,7 +484,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               Text(
-                'Rp ${total == 67500 ? "67.500" : "64.500"}',
+                'Rp ${total.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -429,11 +501,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
-      // 🟢 Properti 'style' dihapus dari sini karena Padding tidak membutuhkannya
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 🟢 Pindahkan TextStyle ke dalam properti 'style' milik widget Text masing-masing
           Text(
             label,
             style: const TextStyle(color: Colors.black54, fontSize: 13),
@@ -451,7 +521,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // Widget 5: Instruksi Manual Rekening Transfer
   Widget _buildPaymentInstructions() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -518,9 +587,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     Icon(Icons.copy, size: 12, color: Colors.black45),
                   ],
                 ),
-                const Text(
-                  'A.N. TOKO BUKU ACENG',
-                  style: TextStyle(fontSize: 10, color: Colors.black45),
+                Text(
+                  'A.N. ${widget.book.storeName.toUpperCase()}',
+                  style: const TextStyle(fontSize: 10, color: Colors.black45),
                 ),
               ],
             ),
@@ -557,8 +626,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         Container(
           width: 18,
           height: 18,
-          alignment: Alignment
-              .center, // 🟢 Diubah dari Center() menjadi Alignment.center
+          alignment: Alignment.center,
           decoration: const BoxDecoration(
             color: Color(0xFF3E2723),
             shape: BoxShape.circle,
