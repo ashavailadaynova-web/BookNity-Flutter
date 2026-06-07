@@ -6,6 +6,8 @@ class BookModel {
   final String price;
   final String category;
   final String description;
+  // 🟢 Tambahan properti baru untuk Deskripsi Fisik Buku
+  final String physicalDescription;
   final double rating;
   final String storeName;
   final bool isFavorite;
@@ -21,6 +23,8 @@ class BookModel {
     required this.price,
     required this.category,
     required this.description,
+    // 🟢 Diwajibkan diisi (atau set default nilai kosong jika opsional di form)
+    this.physicalDescription = '',
     required this.rating,
     required this.storeName,
     this.year = '',
@@ -37,6 +41,7 @@ class BookModel {
     String? price,
     String? category,
     String? description,
+    String? physicalDescription, // 🟢 Ditambahkan ke fungsi copyWith
     double? rating,
     String? storeName,
     bool? isFavorite,
@@ -52,6 +57,9 @@ class BookModel {
       price: price ?? this.price,
       category: category ?? this.category,
       description: description ?? this.description,
+      physicalDescription:
+          physicalDescription ??
+          this.physicalDescription, // 🟢 Sinkronisasi copyWith
       rating: rating ?? this.rating,
       storeName: storeName ?? this.storeName,
       isFavorite: isFavorite ?? this.isFavorite,
@@ -62,7 +70,7 @@ class BookModel {
   }
 
   factory BookModel.fromMap(Map<String, dynamic> map, String documentId) {
-    // 🟢 FUNGSI PENGAMANAN RATING (Sudah Bagus!)
+    // Fungsi pengamanan rating dari Firestore
     double parsedRating = 0.0;
     if (map['rating'] is num) {
       parsedRating = (map['rating'] as num).toDouble();
@@ -74,11 +82,13 @@ class BookModel {
       id: documentId,
       title: map['title'] ?? '',
       author: map['author'] ?? '',
-      // Menyelaraskan nama field image/imageUrl agar fleksibel membaca data Firestore
       image: map['image'] ?? map['imageUrl'] ?? '',
       price: map['price']?.toString() ?? '',
       category: map['category'] ?? '',
       description: map['description'] ?? '',
+      physicalDescription:
+          map['physicalDescription'] ??
+          '', // 🟢 Mengambil data fisik dari Firestore Map
       rating: parsedRating,
       storeName: map['storeName'] ?? '',
       isFavorite: map['isFavorite'] ?? false,
@@ -88,7 +98,6 @@ class BookModel {
     );
   }
 
-  // 🟢 REVISI UTAMA: Menambahkan field year, isbn, dan condition ke map data agar ikut terupload ke Firestore
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -97,6 +106,8 @@ class BookModel {
       'price': price,
       'category': category,
       'description': description,
+      'physicalDescription':
+          physicalDescription, // 🟢 Mengubah data fisik menjadi Map sebelum di-upload ke Firestore
       'rating': rating,
       'storeName': storeName,
       'isFavorite': isFavorite,

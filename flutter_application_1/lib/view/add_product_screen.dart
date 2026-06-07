@@ -27,6 +27,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final TextEditingController isbnController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
+  // 🟢 Tambahan Controller Baru untuk Deskripsi Fisik
+  final TextEditingController physicalDescriptionController = TextEditingController();
 
   String selectedCategory = "Fiksi";
   String selectedCondition = "Like New";
@@ -85,6 +87,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         price: priceController.text.trim(),
         category: selectedCategory,
         description: descriptionController.text.trim(),
+        // 🟢 Menyertakan data Deskripsi Fisik ke dalam model data
+        physicalDescription: physicalDescriptionController.text.trim(),
         rating: 0.0, // 🟢 Menggunakan 0.0 (double) agar sesuai dengan struktur model bertipe pecahan
         storeName: "Booknity Store",
         year: yearController.text.trim(),
@@ -287,6 +291,28 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
             ),
 
+            // 🟢 Input Section Tambah Deskripsi Fisik Buku
+            const SizedBox(height: 24),
+            _title("DESKRIPSI FISIK (OPSIONAL)"),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TextField(
+                controller: physicalDescriptionController,
+                maxLines: 4,
+                enabled: !_isLoading,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(20),
+                  hintText:
+                      "Contoh: 350 Halaman, Soft Cover, Kertas Bookpaper, Berat 300g...",
+                ),
+              ),
+            ),
+
             const SizedBox(height: 30),
 
             SizedBox(
@@ -353,6 +379,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     isbnController.dispose();
     priceController.dispose();
     descriptionController.dispose();
+    // 🟢 Membersihkan controller deskripsi fisik saat widget dihancurkan
+    physicalDescriptionController.dispose();
     super.dispose();
   }
 

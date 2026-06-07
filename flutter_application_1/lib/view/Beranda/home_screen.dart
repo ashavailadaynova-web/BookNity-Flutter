@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../viewmodel/user_viewmodel.dart';
+import '../../model/book_model.dart';
 import 'category_screen.dart';
 import '../message_screen.dart';
 import 'wishlist_screen.dart';
 import '../search_screen.dart';
+import '../product_detail_screen.dart';
 import '../../widgets/buyer_product_card.dart';
+import 'package:flutter_application_1/view/Profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,15 +24,23 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _bannerController = PageController();
   int _currentBanner = 0;
 
-  // 🟢 HELPER UTK FORMAT RUPIAH
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null) {
+        context.read<UserViewModel>().getUser(firebaseUser.uid);
+      }
+    });
+  }
+
   String formatRupiah(String hargaRaw) {
     if (hargaRaw.isEmpty) return 'Rp 0';
-    // Menghapus karakter non-angka jika ada
     String cleanHarga = hargaRaw.replaceAll(RegExp(r'[^0-9]'), '');
     if (cleanHarga.isEmpty) return 'Rp 0';
 
     final value = int.tryParse(cleanHarga) ?? 0;
-    // Format manual ribuan tanpa package tambahan
     String str = value.toString();
     String result = '';
     int count = 0;
@@ -35,14 +49,13 @@ class _HomeScreenState extends State<HomeScreen> {
       result = str[i] + result;
       count++;
       if (count == 3 && i != 0) {
-        result = '.$result';
+        result = '.' + result;
         count = 0;
       }
     }
-    return 'Rp $result';
+    return 'Rp ' + result;
   }
 
-  // 🟢 FUNGSIONALITAS TOGGLE WISHLIST DI FIRESTORE
   Future<void> toggleWishlist(String docId, bool currentStatus) async {
     try {
       await FirebaseFirestore.instance.collection('books').doc(docId).update({
@@ -77,30 +90,48 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 1. Header: Profil & Nama User
+  // 1. Header: Profil (SUDAH AKTIF BISA DIKLIK) & Nama User Dinamis
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors.orange.shade100,
-            child: const Icon(Icons.person, color: Colors.orange, size: 30),
+          // 🟢 SEKARANG SUDAH BISA DIKLIK: Pindah ke Profil saat bulatan ditekan
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+            child: CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.orange.shade100,
+              child: const Icon(Icons.person, color: Colors.orange, size: 30),
+            ),
           ),
           const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hi, Shava!',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A2E2B),
-                ),
-              ),
-            ],
+          Consumer<UserViewModel>(
+            builder: (context, userVM, child) {
+              final userData = userVM.currentUser;
+              final String namaUser = userData?.name.isNotEmpty == true
+                  ? userData!.name
+                  : "Pengguna";
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hi, ' + namaUser + '!',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF4A2E2B),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const Spacer(),
           IconButton(
@@ -202,34 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Image.asset(
-                    bannerImages[index],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: const Color(0xFF4DB6AC),
-                        alignment: Alignment.center,
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.image_not_supported,
-                              size: 40,
-                              color: Colors.white,
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Gambar Banner Belum Ada',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                child: ClipRRect(borderRadius: BorderRadius.circular(15)),
               );
             },
           ),
@@ -298,7 +302,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
-        _buildSectionTitle('Kategori Buku'),
+        // 🟢 DIHAPUS: Mengirim parameter false agar "VIEW ALL" hilang
+        _buildSectionTitle('Kategori Buku', showViewAll: false),
         SizedBox(
           height: 90,
           child: ListView.builder(
@@ -353,7 +358,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Sedang Populer'),
+        // 🟢 DIHAPUS: Mengirim parameter false agar "VIEW ALL" hilang
+        _buildSectionTitle('Sedang Populer', showViewAll: false),
         SizedBox(
           height: 280,
           child: StreamBuilder<QuerySnapshot>(
@@ -375,20 +381,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: bookDocs.length,
                 itemBuilder: (context, index) {
-                  final docId =
-                      bookDocs[index].id; // Ambil ID Dokumen Firestore
+                  final docId = bookDocs[index].id;
                   final book = bookDocs[index].data() as Map<String, dynamic>;
                   final bool favStatus = book['isFavorite'] ?? false;
 
                   return _buildCardBukuHorizontal(
-                    docId, // 🟢 Oper ID Dokumen
+                    docId,
                     book['title'] ?? '',
                     book['author'] ?? '',
-                    formatRupiah(book['price'] ?? ''), // 🟢 Format Jadi Rp
+                    formatRupiah(book['price'] ?? ''),
                     book['rating']?.toString() ?? '0.0',
                     favStatus,
-                    book['image'] ?? '',
+                    book['image'] ?? book['imageUrl'] ?? '',
                     book['storeName'] ?? '',
+                    book,
                   );
                 },
               );
@@ -410,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Rekomendasi Untukmu'),
+        _buildSectionTitle('Rekomendasi Untukmu', showViewAll: false),
         SizedBox(
           height: 38,
           child: ListView.builder(
@@ -468,7 +474,39 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: Text('Belum ada rekomendasi buku'));
           }
 
-          final bookDocs = snapshot.data!.docs;
+          List<QueryDocumentSnapshot> filteredDocs = List.from(
+            snapshot.data!.docs,
+          );
+
+          if (_selectedTab == 1) {
+            filteredDocs = filteredDocs.where((doc) {
+              final bookData = doc.data() as Map<String, dynamic>;
+              return bookData['isFavorite'] == true;
+            }).toList();
+          } else if (_selectedTab == 0) {
+            filteredDocs.sort((a, b) {
+              final dataA = a.data() as Map<String, dynamic>;
+              final dataB = b.data() as Map<String, dynamic>;
+              final double ratingA =
+                  double.tryParse(dataA['rating']?.toString() ?? '0.0') ?? 0.0;
+              final double ratingB =
+                  double.tryParse(dataB['rating']?.toString() ?? '0.0') ?? 0.0;
+              return ratingB.compareTo(ratingA);
+            });
+          }
+
+          if (filteredDocs.isEmpty) {
+            String namaTab = _selectedTab == 1 ? "Wishlist" : "Kategori Ini";
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Center(
+                child: Text(
+                  'Belum ada buku untuk kategori ' + namaTab,
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+              ),
+            );
+          }
 
           return GridView.builder(
             shrinkWrap: true,
@@ -479,21 +517,22 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSpacing: 16,
               childAspectRatio: 0.55,
             ),
-            itemCount: bookDocs.length,
+            itemCount: filteredDocs.length,
             itemBuilder: (context, index) {
-              final docId = bookDocs[index].id; // Ambil ID Dokumen Firestore
-              final book = bookDocs[index].data() as Map<String, dynamic>;
+              final docId = filteredDocs[index].id;
+              final book = filteredDocs[index].data() as Map<String, dynamic>;
               final bool favStatus = book['isFavorite'] ?? false;
 
               return _buildCardBukuVertikal(
-                docId, // 🟢 Oper ID Dokumen
+                docId,
                 book['title'] ?? '',
                 book['author'] ?? '',
-                formatRupiah(book['price'] ?? ''), // 🟢 Format Jadi Rp
+                formatRupiah(book['price'] ?? ''),
                 book['rating']?.toString() ?? '0.0',
                 book['storeName'] ?? '',
-                book['image'] ?? '',
-                favStatus, // 🟢 Oper Status Favorit
+                book['image'] ?? book['imageUrl'] ?? '',
+                favStatus,
+                book,
               );
             },
           );
@@ -502,8 +541,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Helper: Judul Section
-  Widget _buildSectionTitle(String title) {
+  // Fungsi Section Title dengan opsi menyembunyikan VIEW ALL
+  Widget _buildSectionTitle(String title, {bool showViewAll = true}) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
@@ -517,20 +556,20 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Color(0xFF4A2E2B),
             ),
           ),
-          const Text(
-            'VIEW ALL',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFA23914),
+          if (showViewAll)
+            const Text(
+              'VIEW ALL',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFA23914),
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  // Helper Card untuk Bagian Atas (Sedang Populer)
   Widget _buildCardBukuHorizontal(
     String docId,
     String judul,
@@ -540,6 +579,7 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isFavorite,
     String pathGambar,
     String namaToko,
+    Map<String, dynamic> rawMap,
   ) {
     return Container(
       width: 140,
@@ -553,11 +593,11 @@ class _HomeScreenState extends State<HomeScreen> {
         isFavorite,
         pathGambar,
         namaToko,
+        rawMap,
       ),
     );
   }
 
-  // Helper Card untuk Bagian Bawah (Rekomendasi Untukmu)
   Widget _buildCardBukuVertikal(
     String docId,
     String judul,
@@ -567,6 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String namaToko,
     String pathGambar,
     bool isFavorite,
+    Map<String, dynamic> rawMap,
   ) {
     return _buildKontenCard(
       docId,
@@ -577,10 +618,10 @@ class _HomeScreenState extends State<HomeScreen> {
       isFavorite,
       pathGambar,
       namaToko,
+      rawMap,
     );
   }
 
-  // Blueprint Utama penghubung ke BuyerProductCard widget
   Widget _buildKontenCard(
     String docId,
     String judul,
@@ -590,6 +631,7 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isFavorite,
     String pathGambar,
     String namaToko,
+    Map<String, dynamic> rawMap,
   ) {
     return BuyerProductCard(
       imageUrl: pathGambar,
@@ -597,13 +639,19 @@ class _HomeScreenState extends State<HomeScreen> {
       author: penulis,
       price: harga,
       rating: rating,
-      storeName: namaToko,
+      storeName: namaToko.isEmpty ? 'Toko Buku' : namaToko,
       isFavorite: isFavorite,
       onTap: () {
-        Navigator.pushNamed(context, '/product_detail');
+        BookModel selectedBook = BookModel.fromMap(rawMap, docId);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductDetailScreen(book: selectedBook),
+          ),
+        );
       },
       onFavoriteTap: () {
-        // 🟢 EKSEKUSI TOGGLE WISHLIST REAL-TIME KE FIRESTORE
         toggleWishlist(docId, isFavorite);
       },
     );
