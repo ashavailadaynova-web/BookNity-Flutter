@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // 👈 Tambah import ini
 import 'chat_room_screen.dart';
 import '../model/book_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class OfferScreen extends StatefulWidget {
   // 👈 Ubah ke StatefulWidget agar bisa pakai Controller & State
@@ -69,49 +68,17 @@ class _OfferScreenState extends State<OfferScreen> {
   // Fungsi menyimpan data tawar ke Firebase
   Future<void> _submitOfferToFirebase(double offeredPrice) async {
     try {
-      final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-      if (currentUserId.isEmpty) return;
-
-      // Ambil Room ID dari widget utama
-      final String roomId = widget.roomId;
-
-      // Generate ID acak untuk dokumen pesan di chat
-      final String messageId = _firestore.collection('chat_rooms').doc().id;
-
-      // 🟢 Langkah A: Simpan ke Koleksi 'offers' (Data Master Penawaran)
-      final offerDocRef = await _firestore.collection('offers').add({
-        'productId': widget.book.id ?? '', // 👈 Panggil pakai widget.book
-        'productTitle': widget.book.title,
-        'sellerId': widget.book.sellerId,
-        'buyerId': currentUserId,
-        'originalPrice': widget.book.price,
+      await _firestore.collection('offers').add({
+        'productId': widget.productId,
+        'productTitle': widget.title,
+        'sellerId': widget.sellerId,
+        'buyerId':
+            "ID_USER_SEKARANG", // 👈 Ganti dengan ID user/pembeli yang login (bisa dari FirebaseAuth)
+        'originalPrice': widget.originalPrice,
         'offeredPrice': offeredPrice,
-        'status': 'pending',
+        'status': 'pending', // pending, accepted, rejected
         'createdAt': FieldValue.serverTimestamp(),
       });
-
-      // 🟢 Langkah B: Kirim sebagai Pesan Baru ke Chat Room agar Card-nya Muncul
-      await _firestore
-          .collection('chat_rooms')
-          .doc(roomId)
-          .collection('messages')
-          .doc(messageId)
-          .set({
-            'id': messageId,
-            'offerId': offerDocRef.id,
-            'senderId': currentUserId,
-            'receiverId': widget.book.sellerId,
-            'type': 'offerPending',
-            'statusPesanan': 'menunggu_konfirmasi',
-            'bookTitle': widget.book.title,
-            'author': widget.book.author,
-            'cover': widget.book.image,
-            'price': offeredPrice.toStringAsFixed(0),
-            'timestamp': FieldValue.serverTimestamp(),
-            'isMe': true,
-          });
-
-      debugPrint("Penawaran sukses dikirim!");
     } catch (e) {
       debugPrint("Gagal menyimpan penawaran: $e");
     }
@@ -121,8 +88,7 @@ class _OfferScreenState extends State<OfferScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        // 🟢 GANTI 'context' menjadi 'dialogContext' di sini
+      builder: (context) {
         return Dialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -175,9 +141,7 @@ class _OfferScreenState extends State<OfferScreen> {
                       child: SizedBox(
                         height: 58,
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(
-                            dialogContext,
-                          ), // 🟢 Gunakan dialogContext untuk menutup dialog
+                          onPressed: () => Navigator.pop(context),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(
                               color: Color(0xffB14D28),
@@ -204,16 +168,15 @@ class _OfferScreenState extends State<OfferScreen> {
                         height: 58,
                         child: ElevatedButton(
                           onPressed: () async {
-                            // 🟢 1. Tutup dialog menggunakan dialogContext secara tepat
-                            Navigator.pop(dialogContext);
+                            Navigator.pop(context); // Tutup dialog
 
-                            // 2. Simpan ke Firebase Firestore
+                            // 1. Simpan ke Firebase Firestore
                             await _submitOfferToFirebase(offeredPrice);
 
-                            // 3. Pindah ke halaman Chat Room menggunakan context halaman utama
+                            // 2. Pindah ke halaman Chat Room
                             if (mounted) {
                               Navigator.pushReplacement(
-                                context, // 🟢 Tetap pakai context asli halaman utama
+                                context,
                                 MaterialPageRoute(
                                   builder: (_) =>
                                       ChatRoomScreen(sellerId: widget.sellerId),

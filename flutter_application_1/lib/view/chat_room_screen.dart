@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../model/chat_model.dart';
 import '../viewmodel/chat_viewmodel.dart';
+import '../view/Pesanan/payment_screen.dart';
+import '../model/book_model.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final String sellerId;
@@ -52,10 +54,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _sendMessage() {
     final text = controller.text.trim();
     if (text.isEmpty) return;
-
     final chatVm = Provider.of<ChatViewModel>(context, listen: false);
     chatVm.sendMessage(roomId: roomId, text: text);
-
     controller.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
@@ -108,9 +108,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  // ==========================================
-  // CARD CUSTOM PENAWARAN (Murni Nego Harga)
-  // ==========================================
   Widget _buildCustomOfferMessage(MessageModel message, ChatViewModel chatVm) {
     bool isPending =
         message.type == MessageType.offerPending ||
@@ -126,6 +123,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     Color cardBg = const Color(0xffE8DFC7);
     Color textColor = const Color(0xffC45A1A);
     String labelText = "MENUNGGU PERSETUJUAN";
+
     if (isRejected) {
       cardBg = Colors.grey.shade200;
       textColor = Colors.grey.shade600;
@@ -266,7 +264,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   child: OutlinedButton(
                     onPressed: () {
                       if (message.id != null) {
-                        // SESUDAH:
                         chatVm.updateOfferStatus(
                           roomId: roomId,
                           messageId: message.id!,
@@ -327,7 +324,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               width: 180,
               height: 34,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PaymentScreen(
+                        book: BookModel(
+                          title: message.bookTitle ?? '',
+                          author: message.author ?? '',
+                          image: message.cover ?? '',
+                          price: message.price ?? '0',
+                          sellerId: widget.sellerId,
+                          storeName: '',
+                          category: '',
+                          description: '',
+                          rating: 0,
+                        ),
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xffB64B1E),
                   shape: RoundedRectangleBorder(
@@ -350,9 +366,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  // ==========================================
-  // CARD INVOICE/BELI REAL
-  // ==========================================
   Widget _buildInvoiceMessage(MessageModel message, ChatViewModel chatVm) {
     final String title =
         (message.bookTitle != null && message.bookTitle!.trim().isNotEmpty)
@@ -617,13 +630,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Text("Memuat...");
             }
-
             final sellerData = snapshot.data;
             final sellerName =
                 sellerData?['name'] ?? sellerData?['username'] ?? "Penjual";
             final sellerAvatar =
                 sellerData?['avatarUrl'] ?? sellerData?['photoUrl'] ?? "";
-
             return Row(
               children: [
                 CircleAvatar(
@@ -677,12 +688,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text("Belum ada pesan."));
                 }
-
                 final firebaseMessages = snapshot.data!;
                 WidgetsBinding.instance.addPostFrameCallback(
                   (_) => _scrollToBottom(),
                 );
-
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -816,7 +825,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 }
 
 // ==========================================
-// SCREEN DETAIL TRANSAKSI & PENAWARAN (Hanya Ditambah Tombol Batal Sisi Pembeli)
+// SCREEN DETAIL TRANSAKSI & PENAWARAN
 // ==========================================
 class OrderDetailScreen extends StatefulWidget {
   final String roomId;
@@ -861,9 +870,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   void _updateStatusBerurut() {
     if (widget.isOfferType) {
-      setState(() {
-        status = "disetujui";
-      });
+      setState(() => status = "disetujui");
       widget.chatVm.updateOfferStatus(
         roomId: widget.roomId,
         messageId: widget.messageId,
@@ -871,15 +878,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       );
     } else {
       String nextStatus = status;
-      if (status == "menunggu_konfirmasi")
-        nextStatus = "dikemas";
-      else if (status == "dikemas")
-        nextStatus = "dikirim";
-      else if (status == "dikirim")
-        nextStatus = "selesai";
-      setState(() {
-        status = nextStatus;
-      });
+      if (status == "menunggu_konfirmasi") nextStatus = "selesai";
+      setState(() => status = nextStatus);
       widget.chatVm.updateInvoiceStatus(
         roomId: widget.roomId,
         messageId: widget.messageId,
@@ -889,19 +889,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   void _rejectOffer() {
-    // 1. Ubah state visual lokal agar tombol langsung hilang
-    setState(() {
-      status = "ditolak";
-    });
-
-    // 2. 🟢 SOLUSI UTAMA: Gunakan chatVm yang terbukti bekerja di database kamu!
+    setState(() => status = "ditolak");
     widget.chatVm.updateOfferStatus(
       roomId: widget.roomId,
       messageId: widget.messageId,
       newStatus: "ditolak",
     );
-
-    // 3. Tampilkan feedback ke pengguna
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Penawaran berhasil ditolak"),
@@ -911,9 +904,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   void _cancelOrder() {
-    setState(() {
-      status = "dibatalkan";
-    });
+    setState(() => status = "dibatalkan");
     widget.chatVm.updateInvoiceStatus(
       roomId: widget.roomId,
       messageId: widget.messageId,
@@ -933,12 +924,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final String transactionId =
         "BKN-${targetId.length > 5 ? targetId.substring(0, 5) : targetId}";
 
-    int activeStep = 0;
-    if (status == "dikemas" || status == "disetujui") activeStep = 1;
-    if (status == "dikirim") activeStep = 2;
-    if (status == "selesai") activeStep = 3;
-    if (status == "dibatalkan") activeStep = -1;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6EE),
       appBar: AppBar(
@@ -954,76 +939,101 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusCard(activeStep),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Detail Buku",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xff4A241B),
-                        ),
-                      ),
-                      Text(
-                        "$idLabel: $transactionId",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                        ),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('chat_rooms')
+            .doc(widget.roomId)
+            .collection('messages')
+            .doc(widget.messageId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final data = snapshot.data!.data() as Map<String, dynamic>;
+            final firestoreStatus = data['statusPesanan'];
+            if (firestoreStatus != null && firestoreStatus != status) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) setState(() => status = firestoreStatus);
+              });
+            }
+          }
+
+          int activeStep = 0;
+          if (status == "disetujui" || status == "selesai") activeStep = 1;
+          if (status == "dibatalkan") activeStep = -1;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStatusCard(activeStep),
+                const SizedBox(height: 16),
+
+                // DETAIL BUKU
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(height: 1, color: Colors.black12),
-                  ),
-                  Row(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Detail Buku",
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xff4A241B),
                             ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: widget.coverImage.isNotEmpty
-                              ? Image.network(
-                                  widget.coverImage,
-                                  height: 90,
-                                  width: 65,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (c, e, s) => Container(
+                          ),
+                          Text(
+                            "$idLabel: $transactionId",
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(height: 1, color: Colors.black12),
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: widget.coverImage.isNotEmpty
+                                ? Image.network(
+                                    widget.coverImage,
+                                    height: 90,
+                                    width: 65,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (c, e, s) => Container(
+                                      width: 65,
+                                      height: 90,
+                                      color: Colors.black12,
+                                      child: const Icon(
+                                        Icons.book,
+                                        size: 35,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
                                     width: 65,
                                     height: 90,
                                     color: Colors.black12,
@@ -1033,316 +1043,273 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                       color: Colors.grey,
                                     ),
                                   ),
-                                )
-                              : Container(
-                                  width: 65,
-                                  height: 90,
-                                  color: Colors.black12,
-                                  child: const Icon(
-                                    Icons.book,
-                                    size: 35,
-                                    color: Colors.grey,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.bookTitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF1A1A1A),
                                   ),
                                 ),
-                        ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "oleh ${widget.authorName}",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.isOfferType
+                                      ? "Harga Ajuan: Rp ${widget.totalPrice}"
+                                      : "Harga Buku: Rp ${widget.totalPrice}",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xffB64B1E),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ],
+                  ),
+                ),
+
+                if (!widget.isOfferType) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
+                            const Icon(
+                              Icons.local_shipping_outlined,
+                              color: Color(0xff4A241B),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
                             Text(
-                              widget.bookTitle,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              "Informasi Pengiriman",
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1A1A1A),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "oleh ${widget.authorName}",
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              widget.isOfferType
-                                  ? "Harga Ajuan: Rp ${widget.totalPrice}"
-                                  : "Harga Buku: Rp ${widget.totalPrice}",
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xffB64B1E),
+                                color: const Color(0xff4A241B),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            if (!widget.isOfferType) ...[
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.local_shipping_outlined,
-                          color: Color(0xff4A241B),
-                          size: 20,
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(height: 1, color: Colors.black12),
                         ),
-                        const SizedBox(width: 8),
                         Text(
-                          "Informasi Pengiriman",
+                          widget.addressInfo,
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xff4A241B),
+                            fontSize: 13,
+                            color: const Color(0xFF4A4A4A),
+                            height: 1.5,
                           ),
                         ),
                       ],
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(height: 1, color: Colors.black12),
-                    ),
-                    Text(
-                      widget.addressInfo,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        color: const Color(0xFF4A4A4A),
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
                   ),
                 ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.isOfferType
-                        ? "Nilai Penawaran"
-                        : "Ringkasan Pembayaran",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xff4A241B),
-                    ),
+
+                const SizedBox(height: 16),
+                // RINGKASAN PEMBAYARAN
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  _buildPriceRow(
-                    widget.isOfferType
-                        ? "Nominal yang Ditawarkan"
-                        : "Harga Buku",
-                    "Rp ${widget.totalPrice}",
-                  ),
-                  if (!widget.isOfferType) ...[
-                    _buildPriceRow("Biaya Pengiriman", "Sudah Termasuk"),
-                    _buildPriceRow("Biaya Layanan Sistem", "Rp 2.500"),
-                  ],
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    child: Divider(height: 1, color: Colors.black12),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         widget.isOfferType
-                            ? "Total Kesepakatan"
-                            : "Total Bayar",
+                            ? "Nilai Penawaran"
+                            : "Ringkasan Pembayaran",
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
+                          color: const Color(0xff4A241B),
                         ),
                       ),
-                      Text(
-                        status == "dibatalkan"
-                            ? "Rp 0"
-                            : "Rp ${widget.totalPrice}",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: status == "dibatalkan"
-                              ? Colors.grey
-                              : const Color(0xffB64B1E),
-                        ),
+                      const SizedBox(height: 12),
+                      _buildPriceRow(
+                        widget.isOfferType
+                            ? "Nominal yang Ditawarkan"
+                            : "Harga Buku",
+                        "Rp ${widget.totalPrice}",
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // ==========================================
-            // BLOK LOGIKA TOMBOL AKSI UTAMA & BATAL
-            // ==========================================
-            if (widget.isSeller) ...[
-              // === SISI PENJUAL (Sesuai Kode Asli Kamu) ===
-              if (status == "menunggu_konfirmasi") ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            if (widget.isOfferType) {
-                              _rejectOffer(); // 🟢 SEKARANG HAPUS await di sini karena fungsinya sudah jadi void biasa
-                            } else {
-                              _cancelOrder(); // Ini juga tetap void biasa tanpa await
-                            }
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                              color: Colors.redAccent,
-                              width: 1.5,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: Text(
+                      if (!widget.isOfferType) ...[
+                        _buildPriceRow("Biaya Pengiriman", "Sudah Termasuk"),
+                        _buildPriceRow("Biaya Layanan Sistem", "Rp 2.500"),
+                      ],
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Divider(height: 1, color: Colors.black12),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
                             widget.isOfferType
-                                ? "Tolak Penawaran"
-                                : "Tolak Pesanan",
+                                ? "Total Kesepakatan"
+                                : "Total Bayar",
                             style: GoogleFonts.plusJakartaSans(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.bold,
                               fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                    if (widget.isOfferType) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: _updateStatusBerurut,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xff4A241B),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: Text(
-                              "Terima Penawaran",
-                              style: GoogleFonts.plusJakartaSans(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
+                          Text(
+                            status == "dibatalkan"
+                                ? "Rp 0"
+                                : "Rp ${widget.totalPrice}",
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: status == "dibatalkan"
+                                  ? Colors.grey
+                                  : const Color(0xffB64B1E),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // TOMBOL AKSI
+                if (widget.isSeller) ...[
+                  if (status == "menunggu_konfirmasi") ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: OutlinedButton(
+                              onPressed: () => widget.isOfferType
+                                  ? _rejectOffer()
+                                  : _cancelOrder(),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Colors.redAccent,
+                                  width: 1.5,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: Text(
+                                widget.isOfferType
+                                    ? "Tolak Penawaran"
+                                    : "Tolak Pesanan",
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: Colors.redAccent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: _updateStatusBerurut,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xff4A241B),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: Text(
+                                widget.isOfferType
+                                    ? "Terima Penawaran"
+                                    : "Konfirmasi Pesanan",
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
-                ),
-              ] else if (!widget.isOfferType &&
-                  status != "selesai" &&
-                  status != "dibatalkan") ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _updateStatusBerurut,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xff4A241B),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                ] else ...[
+                  if (!widget.isOfferType &&
+                      status == "menunggu_konfirmasi") ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton(
+                        onPressed: _cancelOrder,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                            color: Colors.redAccent,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: Text(
+                          "Batalkan Pesanan",
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ),
-                    child: Text(
-                      status == "dikemas"
-                          ? "Konfirmasi Siap Dikirim"
-                          : "Selesaikan Pesanan",
-                      style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
+                  ],
+                ],
               ],
-            ] else ...[
-              // === SISI PEMBELI (Ditambah Tombol Batalkan Pesanan Tanpa Ubah Desain) ===
-              if (!widget.isOfferType &&
-                  (status == "menunggu_konfirmasi" || status == "dikemas")) ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton(
-                    onPressed: _cancelOrder,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(
-                        color: Colors.redAccent,
-                        width: 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Text(
-                      "Batalkan Pesanan",
-                      style: GoogleFonts.plusJakartaSans(
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ],
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1374,7 +1341,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildStatusCard(int activeStep) {
-    if (status == "dibatalkan") {
+    if (status == "dibatalkan" || status == "ditolak") {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
@@ -1429,21 +1396,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     String textHeadline = widget.isOfferType
         ? "MENUNGGU PERSETUJUAN"
         : "MENUNGGU KONFIRMASI";
-    if (activeStep == 1) textHeadline = "PESANAN DIKEMAS";
-    if (activeStep == 2) textHeadline = "DALAM PERJALANAN";
-    if (activeStep == 3) textHeadline = "PESANAN SELESAI";
+    if (activeStep == 1)
+      textHeadline = widget.isOfferType
+          ? "PENAWARAN DISETUJUI"
+          : "PESANAN SELESAI";
 
     final List<String> statusSteps = widget.isOfferType
         ? ["Diajukan", "Selesai"]
-        : ["Konfirmasi", "Kemas", "Perjalanan", "Selesai"];
+        : ["Konfirmasi", "Selesai"];
     final List<IconData> statusIcons = widget.isOfferType
         ? [Icons.edit_note_rounded, Icons.check_circle_rounded]
-        : [
-            Icons.assignment_turned_in_rounded,
-            Icons.inventory_2_rounded,
-            Icons.local_shipping_rounded,
-            Icons.check_circle_rounded,
-          ];
+        : [Icons.assignment_turned_in_rounded, Icons.check_circle_rounded];
 
     return Container(
       width: double.infinity,
@@ -1502,7 +1465,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             children: List.generate(statusSteps.length, (index) {
               bool isPassed = index <= activeStep;
               bool isCurrent = index == activeStep;
-
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1553,7 +1515,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     Container(
                       width:
                           MediaQuery.of(context).size.width *
-                          (widget.isOfferType ? 0.35 : 0.12),
+                          (widget.isOfferType ? 0.35 : 0.35),
                       height: 3,
                       margin: const EdgeInsets.only(
                         bottom: 16,
