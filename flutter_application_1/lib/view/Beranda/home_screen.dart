@@ -454,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 6. Tab Rekomendasi Untukmu
   Widget _buildRekomendasiUntukmu() {
-    List<String> tabs = ['Sering Dikunjungi', 'Wishlist', 'Mengikuti'];
+    List<String> tabs = ['Sering Dikunjungi', 'Wishlist'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

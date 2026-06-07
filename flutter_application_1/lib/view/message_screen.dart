@@ -56,7 +56,10 @@ class _MessageScreenState extends State<MessageScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Color(0xff4A342E)),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xff4A342E),
+                    ),
                   ),
                   Expanded(
                     child: Center(
@@ -88,7 +91,10 @@ class _MessageScreenState extends State<MessageScreen> {
                 ),
                 child: TextField(
                   controller: _searchController,
-                  style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 15),
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
                   onChanged: (value) {
                     setState(() {
                       _searchQuery = value.toLowerCase();
@@ -97,9 +103,16 @@ class _MessageScreenState extends State<MessageScreen> {
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white, size: 22),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                     hintText: "Telusuri obrolan . . .",
-                    hintStyle: GoogleFonts.plusJakartaSans(color: Colors.white70, fontSize: 15),
+                    hintStyle: GoogleFonts.plusJakartaSans(
+                      color: Colors.white70,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
@@ -116,20 +129,30 @@ class _MessageScreenState extends State<MessageScreen> {
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0xff4A342E)));
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xff4A342E),
+                      ),
+                    );
                   }
 
-                  // 🟢 JIKA KOSONG DI SINI, MAKA DATABASENYA MEMANG BELUM MENYIMPAN FIELD 'participants'
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                          const Icon(
+                            Icons.chat_bubble_outline,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             "Belum ada obrolan masuk.",
-                            style: GoogleFonts.plusJakartaSans(color: Colors.grey, fontSize: 14),
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
@@ -140,46 +163,75 @@ class _MessageScreenState extends State<MessageScreen> {
 
                   return ListView.separated(
                     itemCount: roomDocs.length,
-                    separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade200),
+                    separatorBuilder: (_, __) =>
+                        Divider(height: 1, color: Colors.grey.shade200),
                     itemBuilder: (context, index) {
-                      final data = roomDocs[index].data() as Map<String, dynamic>;
-                      final List<dynamic> participants = data['participants'] ?? [];
-                      
+                      final data =
+                          roomDocs[index].data() as Map<String, dynamic>;
+                      final List<dynamic> participants =
+                          data['participants'] ?? [];
+
                       // Cari ID lawan bicara secara dinamis
                       final String targetId = participants.firstWhere(
                         (id) => id != currentUserId,
                         orElse: () => '',
                       );
 
-                      final String lastMessage = data['lastMessage'] ?? "Mengirim lampiran...";
-                      final String chatTime = _formatTimestamp(data['lastTime'] as Timestamp?);
+                      // ✨ PENGAMAN: Jika targetId kosong atau cacat di database, langsung skip agar tidak crash layar merah
+                      if (targetId.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final String lastMessage =
+                          data['lastMessage'] ?? "Mengirim lampiran...";
+                      final String chatTime = _formatTimestamp(
+                        data['lastTime'] as Timestamp?,
+                      );
                       final bool isUnread = data['unread'] ?? false;
 
                       return FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance.collection('users').doc(targetId).get(),
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(targetId)
+                            .get(),
                         builder: (context, userSnapshot) {
                           String roomTitle = "Pengguna Booknity";
                           String profileImg = "";
 
                           // SINKRONISASI DATA PROFIL USER JIKA ADA
-                          if (userSnapshot.hasData && userSnapshot.data!.exists) {
-                            final userData = userSnapshot.data!.data() as Map<String, dynamic>;
-                            roomTitle = userData['name'] ?? userData['username'] ?? "Pengguna Booknity";
-                            profileImg = userData['photoUrl'] ?? userData['profileImage'] ?? userData['image'] ?? "";
+                          if (userSnapshot.hasData &&
+                              userSnapshot.data!.exists) {
+                            final userData =
+                                userSnapshot.data!.data()
+                                    as Map<String, dynamic>;
+                            roomTitle =
+                                userData['name'] ??
+                                userData['username'] ??
+                                "Pengguna Booknity";
+                            profileImg =
+                                userData['photoUrl'] ??
+                                userData['profileImage'] ??
+                                userData['image'] ??
+                                "";
                           }
 
                           // Filter Search Bar
-                          if (_searchQuery.isNotEmpty && !roomTitle.toLowerCase().contains(_searchQuery)) {
+                          if (_searchQuery.isNotEmpty &&
+                              !roomTitle.toLowerCase().contains(_searchQuery)) {
                             return const SizedBox.shrink();
                           }
 
                           return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => ChatRoomScreen(sellerId: targetId),
+                                  builder: (_) =>
+                                      ChatRoomScreen(sellerId: targetId),
                                 ),
                               );
                             },
@@ -198,10 +250,19 @@ class _MessageScreenState extends State<MessageScreen> {
                                         ? Image.network(
                                             profileImg,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => 
-                                                const Icon(Icons.person, color: Color(0xff4A342E), size: 28),
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    const Icon(
+                                                      Icons.person,
+                                                      color: Color(0xff4A342E),
+                                                      size: 28,
+                                                    ),
                                           )
-                                        : const Icon(Icons.person, color: Color(0xff4A342E), size: 28),
+                                        : const Icon(
+                                            Icons.person,
+                                            color: Color(0xff4A342E),
+                                            size: 28,
+                                          ),
                                   ),
                                 ),
                                 if (isUnread)
@@ -214,7 +275,10 @@ class _MessageScreenState extends State<MessageScreen> {
                                       decoration: BoxDecoration(
                                         color: const Color(0xffC64A0F),
                                         shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
                                       ),
                                     ),
                                   ),

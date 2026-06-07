@@ -34,6 +34,9 @@ class OtherProfileScreen extends StatefulWidget {
   final String
   profileType; // 'martin_follow_back', 'martin_following', atau 'sabian_empty'
 
+  // ✨ DIUBAH: Menggunakan String? agar boleh bernilai null atau kosong
+  final String? photoUrl;
+
   const OtherProfileScreen({
     super.key,
     required this.sellerId,
@@ -46,6 +49,7 @@ class OtherProfileScreen extends StatefulWidget {
     required this.totalMembeli,
     required this.penilaian,
     required this.profileType,
+    this.photoUrl, // ✨ DIUBAH: Kata 'required' dihapus agar tidak wajib diisi dari luar
   });
 
   @override
@@ -177,6 +181,7 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String avatarUrl = widget.photoUrl ?? '';
     return Scaffold(
       backgroundColor: const Color(0xFFFDFBF7),
       appBar: AppBar(
@@ -221,11 +226,16 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                     ),
                   ],
                 ),
-                child: const CircleAvatar(
-                  backgroundColor: Color(0xFFECE6DA),
-                  backgroundImage: AssetImage(
-                    'assets/images/avatar_placeholder.jpg',
-                  ),
+                child: CircleAvatar(
+                  backgroundColor: const Color(0xFFECE6DA),
+                  backgroundImage: avatarUrl.startsWith('http')
+                      ? NetworkImage(avatarUrl)
+                      : (avatarUrl.isNotEmpty
+                                ? AssetImage(avatarUrl)
+                                : const AssetImage(
+                                    'assets/images/avatar_placeholder.jpg',
+                                  ))
+                            as ImageProvider,
                 ),
               ),
             ),

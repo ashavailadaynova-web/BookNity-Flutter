@@ -506,6 +506,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                         : widget.book.rating,
                                     profileType:
                                         sellerData['profileType'] ?? 'seller',
+                                        
                                   ),
                                 ),
                               );

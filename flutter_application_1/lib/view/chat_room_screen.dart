@@ -266,10 +266,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   child: OutlinedButton(
                     onPressed: () {
                       if (message.id != null) {
-                        chatVm.updateInvoiceStatus(
+                        // SESUDAH:
+                        chatVm.updateOfferStatus(
                           roomId: roomId,
                           messageId: message.id!,
-                          newStatus: "dibatalkan",
+                          newStatus: "ditolak",
                         );
                       }
                     },
@@ -894,11 +895,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     });
 
     // 2. 🟢 SOLUSI UTAMA: Gunakan chatVm yang terbukti bekerja di database kamu!
-    widget.chatVm.updateInvoiceStatus(
+    widget.chatVm.updateOfferStatus(
       roomId: widget.roomId,
       messageId: widget.messageId,
-      newStatus:
-          "ditolak", // Mengubah status menjadi ditolak di sub-koleksi messages
+      newStatus: "ditolak",
     );
 
     // 3. Tampilkan feedback ke pengguna
