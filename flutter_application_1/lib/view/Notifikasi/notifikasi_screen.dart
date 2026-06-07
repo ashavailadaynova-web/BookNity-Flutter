@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-import '../chat_room_screen.dart';
+import '../chat_room_screen.dart'; // Pastikan class di dalam file ini bernama "ChatRoomScreen"
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Membungkus halaman dengan DefaultTabController untuk mengatur 3 Tab
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(
-          0xFFFFFDF9,
-        ), // Background krem muda estetik sesuai gambar
+        backgroundColor: const Color(0xFFFFFDF9),
         appBar: AppBar(
           backgroundColor: const Color(0xFFFFFDF9),
           elevation: 0,
@@ -20,16 +17,15 @@ class NotificationScreen extends StatelessWidget {
           title: const Text(
             'Notifikasi',
             style: TextStyle(
-              color: Color(0xFF3E2723), // Cokelat tua khas Booknity
+              color: Color(0xFF3E2723),
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
           ),
-          // Pengaturan barisan Tab atas
           bottom: const TabBar(
             labelColor: Color(0xFF3E2723),
             unselectedLabelColor: Colors.black45,
-            indicatorColor: Color(0xFFD32F2F), // Garis bawah merah
+            indicatorColor: Color(0xFFD32F2F),
             indicatorWeight: 3,
             labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             tabs: [
@@ -56,12 +52,11 @@ class NotificationScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         _buildSectionHeader('Hari ini'),
-       _buildMessageCard(
-         name: 'Sabian Adam',
+        _buildMessageCard(
+          name: 'Sabian Adam',
           time: '20 Menit',
           text: '"Walah gitu ya kak, boleh minta tolong fotoin ngga kak?"',
-          avatarUrl:
-              'https://i.pravatar.cc/100?img=53', // Placeholder foto profil
+          avatarUrl: 'https://i.pravatar.cc/100?img=53',
           hasActionButtons: true,
           isUnread: true,
         ),
@@ -128,7 +123,7 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  // --- TAB 2: BELUM BACA (Hanya yang memiliki dot cokelat/isUnread = true) ---
+  // --- TAB 2: BELUM BACA ---
   Widget _buildTabBelumBaca() {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -204,12 +199,9 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  // --- KOMPONEN WIDGET PENDUKUNG ---
-
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0, top: 4.0),
-      // 🟢 Properti 'style' dipindahkan ke dalam widget Text di bawah ini:
       child: Text(
         title,
         style: const TextStyle(
@@ -223,25 +215,154 @@ class NotificationScreen extends StatelessWidget {
 
   // 1. Kartu Model Pesan Masuk
   Widget _buildMessageCard({
-  required String name,
-  required String time,
-  required String text,
-  required String avatarUrl,
-  required bool hasActionButtons,
-  required bool isUnread,
-}) {
-  return Builder(
-    builder: (context) {
-      return GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ChatRoomScreen(),
+    required String name,
+    required String time,
+    required String text,
+    required String avatarUrl,
+    required bool hasActionButtons,
+    required bool isUnread,
+  }) {
+    return Builder(
+      builder: (context) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChatRoomScreen(
+                  sellerId: 'seller_dummy_1',
+                ), // <-- Tambahkan ini (tanpa const)
+              ),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          );
-        },
-        child: Container(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundImage: NetworkImage(avatarUrl),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 12,
+                                ),
+                                children: [
+                                  const TextSpan(
+                                    text: 'Pesan Baru dari ',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFE64A19),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Text(
+                            time,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        text,
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      if (hasActionButtons) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _buildActionSizeButton(
+                              label: 'Balas',
+                              bgColor: const Color(0xFF3E2723),
+                              textColor: Colors.white,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatRoomScreen(
+                                      sellerId: 'seller_dummy_1',
+                                    ), // <-- Tambahkan ini
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            _buildActionSizeButton(
+                              label: 'Lihat Profil',
+                              bgColor: const Color(0xFFEFEBE9),
+                              textColor: const Color(0xFF3E2723),
+                              onTap: () {
+                                // Aksi lihat profil jika ada
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (isUnread) _buildUnreadDot(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 2. Kartu Model Penawaran Toko Buku
+  Widget _buildShopCard({
+    required String shopName,
+    required String time,
+    required String text,
+    required String avatarUrl,
+    required bool hasActionButtons,
+    required bool isUnread,
+  }) {
+    return Builder(
+      builder: (context) {
+        return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -262,18 +383,14 @@ class NotificationScreen extends StatelessWidget {
                 radius: 22,
                 backgroundImage: NetworkImage(avatarUrl),
               ),
-
               const SizedBox(width: 12),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: RichText(
@@ -283,26 +400,22 @@ class NotificationScreen extends StatelessWidget {
                                 fontSize: 12,
                               ),
                               children: [
-                                const TextSpan(
-                                  text: 'Pesan Baru dari ',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
+                                TextSpan(
+                                  text: shopName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFE64A19),
                                   ),
                                 ),
-                                TextSpan(
-                                  text: name,
-                                  style: const TextStyle(
-                                    fontWeight:
-                                        FontWeight.bold,
-                                    color:
-                                        Color(0xFFE64A19),
-                                  ),
+                                const TextSpan(
+                                  text: ' Menerima Tawaran',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
                           ),
                         ),
-
+                        const SizedBox(width: 8),
                         Text(
                           time,
                           style: const TextStyle(
@@ -312,9 +425,7 @@ class NotificationScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 4),
-
                     Text(
                       text,
                       style: const TextStyle(
@@ -323,24 +434,31 @@ class NotificationScreen extends StatelessWidget {
                         fontStyle: FontStyle.italic,
                       ),
                     ),
-
                     if (hasActionButtons) ...[
                       const SizedBox(height: 8),
-
                       Row(
                         children: [
                           _buildActionSizeButton(
-                            'Balas',
-                            const Color(0xFF3E2723),
-                            Colors.white,
+                            label: 'Balas',
+                            bgColor: const Color(0xFF3E2723),
+                            textColor: Colors.white,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatRoomScreen(
+                                    sellerId: 'seller_dummy_shop',
+                                  ), // <-- Tambahkan ini
+                                ),
+                              );
+                            },
                           ),
-
                           const SizedBox(width: 8),
-
                           _buildActionSizeButton(
-                            'Lihat Profil',
-                            const Color(0xFFEFEBE9),
-                            const Color(0xFF3E2723),
+                            label: 'Lihat Profil',
+                            bgColor: const Color(0xFFEFEBE9),
+                            textColor: const Color(0xFF3E2723),
+                            onTap: () {},
                           ),
                         ],
                       ),
@@ -348,114 +466,11 @@ class NotificationScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               if (isUnread) _buildUnreadDot(),
             ],
           ),
-        ),
-      );
-    },
-  );
-}
-  // 2. Kartu Model Penawaran Toko Buku
-  Widget _buildShopCard({
-    required String shopName,
-    required String time,
-    required String text,
-    required String avatarUrl,
-    required bool hasActionButtons,
-    required bool isUnread,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(radius: 22, backgroundImage: NetworkImage(avatarUrl)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: shopName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFE64A19),
-                              ),
-                            ),
-                            const TextSpan(
-                              text: ' Menerima Tawaran',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      time,
-                      style: const TextStyle(color: Colors.grey, fontSize: 10),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    color: Colors.black54,
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-                if (hasActionButtons) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildActionSizeButton(
-                        'Balas',
-                        const Color(0xFF3E2723),
-                        Colors.white,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildActionSizeButton(
-                        'Lihat Profil',
-                        const Color(0xFFEFEBE9),
-                        const Color(0xFF3E2723),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (isUnread) _buildUnreadDot(),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -465,8 +480,8 @@ class NotificationScreen extends StatelessWidget {
     required String time,
     required String text,
     required IconData icon,
-    required Color iconBgColor, // 💡 Ini nanti otomatis dioverride di dalam
-    required Color iconColor, // 💡 Ini juga otomatis dioverride di dalam
+    required Color iconBgColor,
+    required Color iconColor,
     required bool isUnread,
   }) {
     return Container(
@@ -489,7 +504,7 @@ class NotificationScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: const BoxDecoration(
-              color: Color(0xFFF5EFE6), // Krem lembut melingkar
+              color: Color(0xFFF5EFE6),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: const Color(0xFF4E342E), size: 22),
@@ -562,10 +577,8 @@ class NotificationScreen extends StatelessWidget {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start, // 🟢 Biar sejajar atas
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 🟢 Bungkus RichText dengan Expanded agar tidak jebol ke kanan
                     Expanded(
                       child: RichText(
                         text: TextSpan(
@@ -591,7 +604,7 @@ class NotificationScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8), // 🟢 Beri jarak sedikit
+                    const SizedBox(width: 8),
                     Text(
                       time,
                       style: const TextStyle(color: Colors.grey, fontSize: 10),
@@ -600,9 +613,10 @@ class NotificationScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 _buildActionSizeButton(
-                  'Lihat Profil',
-                  const Color(0xFFEFEBE9),
-                  const Color(0xFF3E2723),
+                  label: 'Lihat Profil',
+                  bgColor: const Color(0xFFEFEBE9),
+                  textColor: const Color(0xFF3E2723),
+                  onTap: () {},
                 ),
               ],
             ),
@@ -626,8 +640,7 @@ class NotificationScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors
-            .white, // Disamakan putih bersih agar seragam dengan yang lain
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -640,14 +653,12 @@ class NotificationScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🟢 Background lingkaran disamakan krem lembut bulat
           Container(
             padding: const EdgeInsets.all(10),
             decoration: const BoxDecoration(
               color: Color(0xFFF5EFE6),
               shape: BoxShape.circle,
             ),
-            // 🟢 Ikon persen diubah jadi cokelat tua
             child: Icon(icon, color: const Color(0xFF4E342E), size: 22),
           ),
           const SizedBox(width: 12),
@@ -685,33 +696,33 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  // Tombol aksi kecil (Balas / Lihat Profil)
-  Widget _buildActionSizeButton(
-  String label,
-  Color bgColor,
-  Color textColor,
-) {
-  return Container(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 16,
-      vertical: 6,
-    ),
-    decoration: BoxDecoration(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      label,
-      style: TextStyle(
-        color: textColor,
-        fontSize: 11,
-        fontWeight: FontWeight.bold,
+  // Tombol aksi kecil (Balas / Lihat Profil) dengan deteksi Klik (onTap)
+  Widget _buildActionSizeButton({
+    required String label,
+    required Color bgColor,
+    required Color textColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  // Bulatan penanda notif belum dibaca
   Widget _buildUnreadDot() {
     return Container(
       margin: const EdgeInsets.only(left: 8, top: 4),

@@ -10,7 +10,7 @@ import 'wishlist_screen.dart';
 import '../search_screen.dart';
 import '../product_detail_screen.dart';
 import '../../widgets/buyer_product_card.dart';
-import 'package:flutter_application_1/view/Profile/profile_screen.dart';
+import '../Profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -90,13 +90,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 1. Header: Profil (SUDAH AKTIF BISA DIKLIK) & Nama User Dinamis
+  // 1. Header: Profil (Bisa Diklik) & Nama User Dinamis
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          // 🟢 SEKARANG SUDAH BISA DIKLIK: Pindah ke Profil saat bulatan ditekan
           GestureDetector(
             onTap: () {
               Navigator.push(
@@ -302,7 +301,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
-        // 🟢 DIHAPUS: Mengirim parameter false agar "VIEW ALL" hilang
         _buildSectionTitle('Kategori Buku', showViewAll: false),
         SizedBox(
           height: 90,
@@ -358,7 +356,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 🟢 DIHAPUS: Mengirim parameter false agar "VIEW ALL" hilang
         _buildSectionTitle('Sedang Populer', showViewAll: false),
         SizedBox(
           height: 280,
@@ -407,12 +404,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 6. Tab Rekomendasi Untukmu
   Widget _buildRekomendasiUntukmu() {
-    List<String> tabs = [
-      'Sering Dikunjungi',
-      'Wishlist',
-      'Terdekat',
-      'Mengikuti',
-    ];
+    // 🟢 'Terdekat' sudah resmi dihapus dari list di bawah ini
+    List<String> tabs = ['Sering Dikunjungi', 'Wishlist', 'Mengikuti'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -478,12 +471,15 @@ class _HomeScreenState extends State<HomeScreen> {
             snapshot.data!.docs,
           );
 
+          // 🟢 Logika filter tab disesuaikan karena 'Terdekat' dihapus
           if (_selectedTab == 1) {
+            // Index 1 sekarang murni milik Wishlist
             filteredDocs = filteredDocs.where((doc) {
               final bookData = doc.data() as Map<String, dynamic>;
               return bookData['isFavorite'] == true;
             }).toList();
           } else if (_selectedTab == 0) {
+            // Index 0 murni milik Sering Dikunjungi (Urut Rating tertinggi)
             filteredDocs.sort((a, b) {
               final dataA = a.data() as Map<String, dynamic>;
               final dataB = b.data() as Map<String, dynamic>;
@@ -541,7 +537,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Fungsi Section Title dengan opsi menyembunyikan VIEW ALL
   Widget _buildSectionTitle(String title, {bool showViewAll = true}) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
