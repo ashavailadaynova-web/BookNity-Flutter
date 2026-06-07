@@ -26,6 +26,7 @@ import 'viewmodel/auth_viewmodel.dart';
 import 'viewmodel/address_viewmodel.dart';
 import 'viewmodel/user_viewmodel.dart';
 import 'viewmodel/chat_viewmodel.dart';
+import 'viewmodel/notification_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,8 +39,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => BookViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => UserViewModel()),
-
-        ListenableProvider<ChatViewModel>(create: (_) => ChatViewModel()),
+        ChangeNotifierProvider(create: (_) => ChatViewModel()),
+        ChangeNotifierProvider(create: (_) => AddressViewModel()),
+        ChangeNotifierProvider(create: (_) => NotificationViewModel()),
       ],
       child: const MyApp(),
     ),
@@ -82,7 +84,8 @@ class MainOnboardingContainer extends StatefulWidget {
   const MainOnboardingContainer({super.key});
 
   @override
-  State<MainOnboardingContainer> createState() => _MainOnboardingContainerState();
+  State<MainOnboardingContainer> createState() =>
+      _MainOnboardingContainerState();
 }
 
 class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
@@ -94,7 +97,9 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
   void initState() {
     super.initState();
     // Mengatur geser otomatis setiap 4 detik
-    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (
+      Timer timer,
+    ) {
       if (_currentPage < 2) {
         _currentPage++;
         if (_pageController.hasClients) {
@@ -131,7 +136,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
           });
         },
         children: [
-          OnboardingScreen(),  // Halaman 1
+          OnboardingScreen(), // Halaman 1
           OnboardingScreen2(), // Halaman 2
           OnboardingScreen3(), // Halaman 3
         ],

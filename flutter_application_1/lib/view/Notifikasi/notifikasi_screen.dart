@@ -1,11 +1,31 @@
+// Ganti seluruh notifikasi_screen.dart
+
 import 'package:flutter/material.dart';
-import '../chat_room_screen.dart'; // Pastikan class di dalam file ini bernama "ChatRoomScreen"
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../viewmodel/notification_viewmodel.dart';
+import '../../model/notification_model.dart';
+import '../chat_room_screen.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => NotificationViewModel(),
+      child: const _NotificationView(),
+    );
+  }
+}
+
+class _NotificationView extends StatelessWidget {
+  const _NotificationView();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<NotificationViewModel>();
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -22,6 +42,20 @@ class NotificationScreen extends StatelessWidget {
               fontSize: 18,
             ),
           ),
+          actions: [
+            if (vm.unreadCount > 0)
+              TextButton(
+                onPressed: () => vm.markAllAsRead(),
+                child: const Text(
+                  'Baca Semua',
+                  style: TextStyle(
+                    color: Color(0xFF9E3422),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
           bottom: const TabBar(
             labelColor: Color(0xFF3E2723),
             unselectedLabelColor: Colors.black45,
@@ -35,703 +69,201 @@ class NotificationScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: TabBarView(
+        body: vm.isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF9E3422)),
+              )
+            : TabBarView(
+                children: [
+                  _NotifList(filter: 'all'),
+                  _NotifList(filter: 'unread'),
+                  _NotifList(filter: 'read'),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _NotifList extends StatelessWidget {
+  final String filter;
+  const _NotifList({required this.filter});
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<NotificationViewModel>();
+    final list = vm.getNotifications(filter);
+
+    if (list.isEmpty) {
+      return const Center(
+        child: Text(
+          'Tidak ada notifikasi',
+          style: TextStyle(color: Colors.grey, fontSize: 14),
+        ),
+      );
+    }
+
+    String currentSection = '';
+    List<Widget> items = [];
+
+    for (final notif in list) {
+      if (notif.section != currentSection) {
+        currentSection = notif.section;
+        items.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, top: 4),
+            child: Text(
+              currentSection,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        );
+      }
+      items.add(_NotifCard(notif: notif));
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+      children: items,
+    );
+  }
+}
+
+class _NotifCard extends StatelessWidget {
+  final NotificationModel notif;
+  const _NotifCard({required this.notif});
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.read<NotificationViewModel>();
+
+    return GestureDetector(
+      onTap: () {
+        vm.markAsRead(notif.id);
+        if ((notif.type == 'message' ||
+                notif.type == 'offer_accepted' ||
+                notif.type == 'offer_rejected') &&
+            notif.sellerId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatRoomScreen(sellerId: notif.sellerId!),
+            ),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: notif.isUnread ? const Color(0xFFFFF8F5) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: notif.isUnread
+              ? Border.all(color: const Color(0xFF9E3422).withOpacity(0.2))
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTabSemua(),
-            _buildTabBelumBaca(),
-            _buildTabSudahBaca(),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _iconBgColor(notif.type),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(notif.icon, color: _iconColor(notif.type), size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          notif.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: notif.isUnread
+                                ? const Color(0xFF3E2723)
+                                : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        notif.timeAgo,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    notif.text,
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (notif.isUnread)
+              Container(
+                margin: const EdgeInsets.only(left: 8, top: 4),
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF9E3422),
+                  shape: BoxShape.circle,
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  // --- TAB 1: SEMUA NOTIFIKASI ---
-  Widget _buildTabSemua() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSectionHeader('Hari ini'),
-        _buildMessageCard(
-          name: 'Sabian Adam',
-          time: '20 Menit',
-          text: '"Walah gitu ya kak, boleh minta tolong fotoin ngga kak?"',
-          avatarUrl: 'https://i.pravatar.cc/100?img=53',
-          hasActionButtons: true,
-          isUnread: true,
-        ),
-        _buildShopCard(
-          shopName: 'Toko Buku Aceng',
-          time: '1 Jam',
-          text:
-              '"Halo kak, terima kasih sudah berkunjung di Toko kami. Untuk tawaran buku ...',
-          avatarUrl: 'https://i.pravatar.cc/100?img=12',
-          hasActionButtons: true,
-          isUnread: true,
-        ),
-        _buildStatusCard(
-          title: 'Pesananmu Dikirim',
-          time: '2 Jam',
-          text:
-              'Buku "Bumi Manusia" sedang menuju alamatmu. Kurir diperkirakan tiba sore ini.',
-          icon: Icons.local_shipping_outlined,
-          iconBgColor: const Color(0xFFFFEBEE),
-          iconColor: const Color(0xFFD32F2F),
-          isUnread: true,
-        ),
-        _buildFollowCard(
-          name: 'Martin Edwards',
-          time: '3 Jam',
-          text: 'Mulai Mengikuti Anda',
-          avatarUrl: 'https://i.pravatar.cc/100?img=60',
-          isUnread: true,
-        ),
-        const SizedBox(height: 16),
-        _buildSectionHeader('Kemarin'),
-        _buildPromoCard(
-          title: 'Promo Hari Ini!',
-          text:
-              'Dapatkan diskon hingga 50% untuk kategori komik dengan menggunakan kode...',
-          icon: Icons.percent,
-          iconBgColor: const Color(0xFFE0F2FE),
-          iconColor: const Color(0xFF0284C7),
-          isUnread: false,
-        ),
-        _buildStatusCard(
-          title: 'Review Buku Kamu',
-          time: 'Kemarin',
-          text:
-              'Bagaimana menurutmu tentang buku "Sapiens"? Bagikan ulasanmu dan dapatkan 50 poin.',
-          icon: Icons.rate_review_outlined,
-          iconBgColor: const Color(0xFFFEF9E7),
-          iconColor: const Color(0xFFD4AC0D),
-          isUnread: false,
-        ),
-        const SizedBox(height: 16),
-        _buildSectionHeader('2 hari lalu'),
-        _buildStatusCard(
-          title: 'Pesanan Selesai',
-          time: '2 hari lalu',
-          text:
-              'Transaksi #BK-88291 telah selesai. Terima kasih telah berbelanja di Bookity!',
-          icon: Icons.shopping_bag_outlined,
-          iconBgColor: const Color(0xFFE8F5E9),
-          iconColor: const Color(0xFF2E7D32),
-          isUnread: false,
-        ),
-      ],
-    );
+  Color _iconBgColor(String type) {
+    switch (type) {
+      case 'offer_accepted':
+        return const Color(0xFFE8F5E9);
+      case 'offer_rejected':
+        return const Color(0xFFFFEBEE);
+      case 'order_status':
+        return const Color(0xFFE3F2FD);
+      default:
+        return const Color(0xFFF5EFE6);
+    }
   }
 
-  // --- TAB 2: BELUM BACA ---
-  Widget _buildTabBelumBaca() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSectionHeader('Hari ini'),
-        _buildMessageCard(
-          name: 'Sabian Adam',
-          time: '20 Menit',
-          text: '"Walah gitu ya kak, boleh minta tolong fotoin ngga kak?"',
-          avatarUrl: 'https://i.pravatar.cc/100?img=53',
-          hasActionButtons: true,
-          isUnread: true,
-        ),
-        _buildShopCard(
-          shopName: 'Toko Buku Aceng',
-          time: '1 Jam',
-          text:
-              '"Halo kak, terima kasih sudah berkunjung di Toko kami. Untuk tawaran buku ...',
-          avatarUrl: 'https://i.pravatar.cc/100?img=12',
-          hasActionButtons: true,
-          isUnread: true,
-        ),
-        _buildStatusCard(
-          title: 'Pesananmu Dikirim',
-          time: '2 Jam',
-          text:
-              'Buku "Bumi Manusia" sedang menuju alamatmu. Kurir diperkirakan tiba sore ini.',
-          icon: Icons.local_shipping_outlined,
-          iconBgColor: const Color(0xFFFFEBEE),
-          iconColor: const Color(0xFFD32F2F),
-          isUnread: true,
-        ),
-        _buildFollowCard(
-          name: 'Martin Edwards',
-          time: '3 Jam',
-          text: 'Mulai Mengikuti Anda',
-          avatarUrl: 'https://i.pravatar.cc/100?img=60',
-          isUnread: true,
-        ),
-      ],
-    );
-  }
-
-  // --- TAB 3: SUDAH BACA ---
-  Widget _buildTabSudahBaca() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSectionHeader('Kemarin'),
-        _buildStatusCard(
-          title: 'Review Buku Kamu',
-          time: 'Kemarin',
-          text:
-              'Bagaimana menurutmu tentang buku "Sapiens"? Bagikan ulasanmu dan dapatkan 50 poin.',
-          icon: Icons.rate_review_outlined,
-          iconBgColor: const Color(0xFFFEF9E7),
-          iconColor: const Color(0xFFD4AC0D),
-          isUnread: false,
-        ),
-        const SizedBox(height: 16),
-        _buildSectionHeader('2 hari lalu'),
-        _buildStatusCard(
-          title: 'Pesanan Selesai',
-          time: '2 hari lalu',
-          text:
-              'Transaksi #BK-88291 telah selesai. Terima kasih telah berbelanja di Bookity!',
-          icon: Icons.shopping_bag_outlined,
-          iconBgColor: const Color(0xFFE8F5E9),
-          iconColor: const Color(0xFF2E7D32),
-          isUnread: false,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0, top: 4.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-          fontSize: 14,
-        ),
-      ),
-    );
-  }
-
-  // 1. Kartu Model Pesan Masuk
-  Widget _buildMessageCard({
-    required String name,
-    required String time,
-    required String text,
-    required String avatarUrl,
-    required bool hasActionButtons,
-    required bool isUnread,
-  }) {
-    return Builder(
-      builder: (context) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChatRoomScreen(
-                  sellerId: 'seller_dummy_1',
-                ), // <-- Tambahkan ini (tanpa const)
-              ),
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundImage: NetworkImage(avatarUrl),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: RichText(
-                              text: TextSpan(
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 12,
-                                ),
-                                children: [
-                                  const TextSpan(
-                                    text: 'Pesan Baru dari ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFE64A19),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Text(
-                            time,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        text,
-                        style: const TextStyle(
-                          color: Colors.black54,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                      if (hasActionButtons) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _buildActionSizeButton(
-                              label: 'Balas',
-                              bgColor: const Color(0xFF3E2723),
-                              textColor: Colors.white,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ChatRoomScreen(
-                                      sellerId: 'seller_dummy_1',
-                                    ), // <-- Tambahkan ini
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            _buildActionSizeButton(
-                              label: 'Lihat Profil',
-                              bgColor: const Color(0xFFEFEBE9),
-                              textColor: const Color(0xFF3E2723),
-                              onTap: () {
-                                // Aksi lihat profil jika ada
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (isUnread) _buildUnreadDot(),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // 2. Kartu Model Penawaran Toko Buku
-  Widget _buildShopCard({
-    required String shopName,
-    required String time,
-    required String text,
-    required String avatarUrl,
-    required bool hasActionButtons,
-    required bool isUnread,
-  }) {
-    return Builder(
-      builder: (context) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundImage: NetworkImage(avatarUrl),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: shopName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFFE64A19),
-                                  ),
-                                ),
-                                const TextSpan(
-                                  text: ' Menerima Tawaran',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          time,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      text,
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    if (hasActionButtons) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _buildActionSizeButton(
-                            label: 'Balas',
-                            bgColor: const Color(0xFF3E2723),
-                            textColor: Colors.white,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ChatRoomScreen(
-                                    sellerId: 'seller_dummy_shop',
-                                  ), // <-- Tambahkan ini
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          _buildActionSizeButton(
-                            label: 'Lihat Profil',
-                            bgColor: const Color(0xFFEFEBE9),
-                            textColor: const Color(0xFF3E2723),
-                            onTap: () {},
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (isUnread) _buildUnreadDot(),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // 3. Kartu Model Status / Pengiriman / Review
-  Widget _buildStatusCard({
-    required String title,
-    required String time,
-    required String text,
-    required IconData icon,
-    required Color iconBgColor,
-    required Color iconColor,
-    required bool isUnread,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5EFE6),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: const Color(0xFF4E342E), size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      time,
-                      style: const TextStyle(color: Colors.grey, fontSize: 10),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: const TextStyle(color: Colors.black54, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          if (isUnread) _buildUnreadDot(),
-        ],
-      ),
-    );
-  }
-
-  // 4. Kartu Model Mulai Mengikuti (Follow)
-  Widget _buildFollowCard({
-    required String name,
-    required String time,
-    required String text,
-    required String avatarUrl,
-    required bool isUnread,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(radius: 22, backgroundImage: NetworkImage(avatarUrl)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFE64A19),
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' $text',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      time,
-                      style: const TextStyle(color: Colors.grey, fontSize: 10),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _buildActionSizeButton(
-                  label: 'Lihat Profil',
-                  bgColor: const Color(0xFFEFEBE9),
-                  textColor: const Color(0xFF3E2723),
-                  onTap: () {},
-                ),
-              ],
-            ),
-          ),
-          if (isUnread) _buildUnreadDot(),
-        ],
-      ),
-    );
-  }
-
-  // 5. Kartu Model Promo Khusus
-  Widget _buildPromoCard({
-    required String title,
-    required String text,
-    required IconData icon,
-    required Color iconBgColor,
-    required Color iconColor,
-    required bool isUnread,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF5EFE6),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: const Color(0xFF4E342E), size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const Text(
-                      'Kemarin',
-                      style: TextStyle(color: Colors.grey, fontSize: 10),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: const TextStyle(color: Colors.black54, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          if (isUnread) _buildUnreadDot(),
-        ],
-      ),
-    );
-  }
-
-  // Tombol aksi kecil (Balas / Lihat Profil) dengan deteksi Klik (onTap)
-  Widget _buildActionSizeButton({
-    required String label,
-    required Color bgColor,
-    required Color textColor,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUnreadDot() {
-    return Container(
-      margin: const EdgeInsets.only(left: 8, top: 4),
-      width: 8,
-      height: 8,
-      decoration: const BoxDecoration(
-        color: Color(0xFF4E342E),
-        shape: BoxShape.circle,
-      ),
-    );
+  Color _iconColor(String type) {
+    switch (type) {
+      case 'offer_accepted':
+        return Colors.green;
+      case 'offer_rejected':
+        return Colors.redAccent;
+      case 'order_status':
+        return Colors.blue;
+      default:
+        return const Color(0xFF4E342E);
+    }
   }
 }
