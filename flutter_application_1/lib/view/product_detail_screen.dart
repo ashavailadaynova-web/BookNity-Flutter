@@ -39,6 +39,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     super.dispose();
   }
 
+  Future<void> _toggleWishlist(String docId, bool currentStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('books').doc(docId).update({
+        'isFavorite': !currentStatus,
+      });
+    } catch (e) {
+      debugPrint('Gagal update wishlist: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,12 +73,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.black87),
-            onPressed: () {},
-          ),
-        ],
       ),
 
       // Menggunakan Column agar Bottom Bar di bawah tetap terkunci sempurna
@@ -379,13 +383,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 color: Colors.black87,
                               ),
                             ),
-                            Text(
-                              '${widget.book.sellerCity}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -422,13 +419,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => OtherProfileScreen(
+                                    sellerId: sId,
                                     name:
                                         sellerData['name'] ??
                                         sellerData['username'] ??
                                         widget
                                             .book
                                             .storeName, // Tambahkan fallback username
-                                    joinYear: sellerData['joinYear'] ?? '2024',
+                                    joinYear: sellerData['joinYear'] ?? '2026',
                                     followers:
                                         '${sellerData['followers'] ?? 0}',
                                     following:
@@ -503,9 +501,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       stream: FirebaseFirestore.instance
                           .collection('books')
                           .where('category', isEqualTo: widget.book.category)
-                          .limit(10)
+                          .limit(
+                            11,
+                          ) // Ambil 11 data (karena 1 data akan dibuang jika itu buku yang sedang dibuka)
                           .snapshots(),
                       builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          print(
+                            "Jumlah buku kategori ${widget.book.category} yang ditemukan: ${snapshot.data!.docs.length}",
+                          );
+                        }
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const Center(
@@ -531,28 +536,80 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           );
                         }
 
-                        final recommendedBooks = snapshot.data!.docs;
+                        // 🟢 1. PENYELAMAT: Filter agar buku yang sedang dibuka saat ini tidak masuk daftar rekomendasi
+                        final rawDocs = snapshot.data!.docs;
+                        final recommendedBooks = rawDocs
+                            .where((doc) => doc.id != widget.book.id)
+                            .toList();
+
+                        // Jika setelah difilter ternyata kosong (artinya di DB cuma ada 1 buku ini saja untuk kategori tersebut)
+                        if (recommendedBooks.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'Tidak ada buku serupa lainnya.',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
+                            ),
+                          );
+                        }
+
                         return ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: recommendedBooks.length,
                           separatorBuilder: (context, index) =>
                               const SizedBox(width: 16),
                           itemBuilder: (context, index) {
-                            final bookData =
-                                recommendedBooks[index].data()
-                                    as Map<String, dynamic>;
-                            return BuyerProductCard(
-                              imageUrl:
-                                  bookData['imageUrl'] ??
-                                  'assets/images/placeholder.jpg',
-                              title: bookData['title'] ?? 'Tanpa Judul',
-                              author: bookData['author'] ?? 'Anonim',
-                              price: 'Rp ${bookData['price'] ?? 0}',
-                              rating: '${bookData['rating'] ?? 0.0}',
-                              storeName: bookData['storeName'] ?? 'Toko Buku',
-                              isFavorite: bookData['isFavorite'] ?? false,
-                              onTap: () {},
-                              onFavoriteTap: () {},
+                            final doc = recommendedBooks[index];
+                            final bookData = doc.data() as Map<String, dynamic>;
+                            final bool currentIsFavorite =
+                                bookData['isFavorite'] ?? false;
+
+                            // 🟢 BUNGKUS DENGAN SIZEDBOX AGAR MEMILIKI UKURAN PASTI (Mencegah Unbounded Constraints)
+                            return SizedBox(
+                              width: 150, // 👈 Kunci lebar card di sini
+                              height: 250, // 👈 Kunci tinggi card di sini
+                              child: BuyerProductCard(
+                                imageUrl:
+                                    bookData['image'] ??
+                                    'assets/images/placeholder.jpg',
+                                title: bookData['title'] ?? 'Tanpa Judul',
+                                author: bookData['author'] ?? 'Anonim',
+                                price: 'Rp ${bookData['price'] ?? 0}',
+                                // 🟢 Penyelamat Null Check: Jangan gunakan parsing paksa jika ragu tipe datanya
+                                rating: bookData['rating'] != null
+                                    ? '${bookData['rating']}'
+                                    : '0.0',
+                                storeName: bookData['storeName'] ?? 'Toko Buku',
+                                isFavorite:
+                                    currentIsFavorite, // Ambil status asli dari Firestore
+                                onTap: () {
+                                  final clickedBook = BookModel.fromMap(
+                                    doc.data() as Map<String, dynamic>,
+                                    doc.id,
+                                  );
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProductDetailScreen(
+                                        book: clickedBook,
+                                      ),
+                                    ),
+                                  );
+                                },
+
+                                // 🟢 SEKARANG DIISI: Panggil fungsi toggle wishlist saat tombol love ditekan
+                                onFavoriteTap: () async {
+                                  await _toggleWishlist(
+                                    doc.id,
+                                    currentIsFavorite,
+                                  );
+                                  // Karena kita menggunakan StreamBuilder, layar akan otomatis ter-refresh
+                                  // dan warna ikon love akan langsung berubah tanpa perlu setState!
+                                },
+                              ),
                             );
                           },
                         );
