@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../../model/address_model.dart';
-import '../../viewmodel/address_viewmodel.dart';
+import '../../../model/address_model.dart';
+import '../../../viewmodel/address_viewmodel.dart';
 
 class EditAddressScreen extends StatefulWidget {
   final AddressModel address;

@@ -11,7 +11,10 @@ import '../Profile/address_list_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
   final BookModel book;
-  const PaymentScreen({Key? key, required this.book}) : super(key: key);
+  final int? customPrice; // harga hasil nego (opsional)
+
+  const PaymentScreen({Key? key, required this.book, this.customPrice})
+    : super(key: key);
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
@@ -50,6 +53,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
+  // Parse harga string → double (untuk kalkulasi)
   double _parsePrice(String priceStr) {
     final cleanStr = priceStr
         .replaceAll('Rp', '')
@@ -57,6 +61,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
         .replaceAll(',', '')
         .trim();
     return double.tryParse(cleanStr) ?? 0.0;
+  }
+
+  // Format int → "50.000"
+  String _formatRupiah(int amount) {
+    return amount.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
+  }
+
+  // Harga buku yang dipakai: customPrice jika ada, fallback ke book.price
+  double get _effectiveBookPrice {
+    if (widget.customPrice != null) {
+      return widget.customPrice!.toDouble();
+    }
+    return _parsePrice(widget.book.price);
+  }
+
+  // Teks harga buku yang ditampilkan
+  String get _displayBookPrice {
+    if (widget.customPrice != null) {
+      return 'Rp ${_formatRupiah(widget.customPrice!)}';
+    }
+    return widget.book.price.startsWith('Rp')
+        ? widget.book.price
+        : 'Rp ${widget.book.price}';
   }
 
   @override
@@ -170,7 +200,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 }
 
                 int shippingCost = _selectedCourier == 'jne' ? 10000 : 7000;
-                double bookPrice = _parsePrice(widget.book.price);
+                double bookPrice = _effectiveBookPrice; // ← pakai harga nego
                 double serviceFee = 2500;
                 double totalBayar = bookPrice + shippingCost + serviceFee;
                 String kurirName = _selectedCourier == 'jne'
@@ -182,13 +212,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     '${_selectedAddress!.recipient} (${_selectedAddress!.phone})\n'
                     '${_selectedAddress!.address}';
 
-                String totalBayarFormated = totalBayar
-                    .toInt()
-                    .toString()
-                    .replaceAllMapped(
-                      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                      (Match m) => '${m[1]}.',
-                    );
+                String totalBayarFormatted = _formatRupiah(totalBayar.toInt());
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -213,7 +237,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   title: widget.book.title,
                   author: widget.book.author,
                   image: widget.book.image,
-                  totalPrice: totalBayarFormated,
+                  totalPrice: totalBayarFormatted,
                   sellerId: widget.book.sellerId,
                 );
 
@@ -343,8 +367,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
           const SizedBox(height: 10),
-
-          // Tombol ganti alamat (muncul jika punya lebih dari 1)
           Consumer<AddressViewModel>(
             builder: (context, vm, _) {
               if (vm.addresses.length <= 1) return const SizedBox.shrink();
@@ -365,8 +387,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
               );
             },
           ),
-
-          // Tombol kelola alamat (selalu muncul)
           GestureDetector(
             onTap: () async {
               await Navigator.push(
@@ -454,9 +474,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'BELI LANGSUNG',
-                  style: TextStyle(
+                Text(
+                  widget.customPrice != null ? 'HARGA NEGO' : 'BELI LANGSUNG',
+                  style: const TextStyle(
                     color: Color(0xFFD32F2F),
                     fontWeight: FontWeight.bold,
                     fontSize: 9,
@@ -487,13 +507,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  widget.book.price.startsWith('Rp')
-                      ? widget.book.price
-                      : 'Rp ${widget.book.price}',
+                  _displayBookPrice, // ← harga nego atau harga asli
                   style: const TextStyle(
-                    color: Color(0xFF9E3422),
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    color: Color(0xffB64B1E),
                   ),
                 ),
               ],
@@ -585,7 +603,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _buildPaymentDetails() {
     int shippingCost = _selectedCourier == 'jne' ? 10000 : 7000;
-    double bookPrice = _parsePrice(widget.book.price);
+    double bookPrice = _effectiveBookPrice; // ← pakai harga nego jika ada
     double serviceFee = 2500;
     double total = bookPrice + shippingCost + serviceFee;
 
@@ -607,12 +625,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildDetailRow(
-            'Harga Buku',
-            widget.book.price.startsWith('Rp')
-                ? widget.book.price
-                : 'Rp ${widget.book.price}',
-          ),
+          _buildDetailRow('Harga Buku', _displayBookPrice), // ← harga nego
           _buildDetailRow(
             'Ongkir Pengiriman',
             'Rp ${shippingCost == 10000 ? "10.000" : "7.000"}',
@@ -634,7 +647,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               Text(
-                'Rp ${total.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                'Rp ${_formatRupiah(total.toInt())}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,

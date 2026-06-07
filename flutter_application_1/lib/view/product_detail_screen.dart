@@ -782,23 +782,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             context,
                             MaterialPageRoute(
                               builder: (context) => OfferScreen(
-                                book: widget.book,
+                                book: widget
+                                    .book, // 🟢 SUDAH BENAR: Menggunakan data dari detail produk
                                 productId:
                                     widget.book.id ??
-                                    '', // 👇 PERBAIKAN: widget.book
+                                    '', // 🟢 SUDAH BENAR: Mengambil ID dokumen buku [cite: 223, 224]
                                 title: widget
                                     .book
-                                    .title, // 👇 PERBAIKAN: widget.book
+                                    .title, // 🟢 SUDAH BENAR: Mengambil judul buku [cite: 224, 225]
                                 author: widget
                                     .book
-                                    .author, // 👇 PERBAIKAN: widget.book
+                                    .author, // 🟢 SUDAH BENAR: Mengambil nama penulis [cite: 225, 226]
                                 imageUrl: widget
                                     .book
-                                    .image, // 👇 PERBAIKAN: widget.book
-                                originalPrice: parsedPrice,
+                                    .image, // 🟢 SUDAH BENAR: Mengambil tautan/path gambar [cite: 226, 227]
+                                originalPrice:
+                                    parsedPrice, // 🟢 SUDAH BENAR: Angka hasil konversi parsing di atas [cite: 227]
                                 sellerId: widget
                                     .book
-                                    .sellerId, // 👇 PERBAIKAN: widget.book
+                                    .sellerId, // 🟢 SUDAH BENAR: ID Penjual pemilik buku [cite: 227, 228]
                                 roomId: generatedRoomId,
                               ),
                             ),
