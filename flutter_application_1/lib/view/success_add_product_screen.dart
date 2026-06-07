@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'Profile/profile_screen.dart';
 import '../../main_screen.dart';
-import 'Profile/profile_screen.dart';
 
 class SuccessAddProductScreen extends StatelessWidget {
   const SuccessAddProductScreen({super.key});
@@ -19,7 +17,6 @@ class SuccessAddProductScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
 
-                /// ICON CHECK
                 Container(
                   width: 96,
                   height: 96,
@@ -78,7 +75,9 @@ class SuccessAddProductScreen extends StatelessWidget {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const ProfileScreen(),
+                        builder: (_) => const MainScreen(
+                          selectedIndex: 3,
+                        ),
                       ),
                       (route) => false,
                     );
