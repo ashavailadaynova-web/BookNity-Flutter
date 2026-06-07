@@ -163,14 +163,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 String roomId = chatVm.getRoomId(chatVm.currentUserId, widget.book.sellerId);
 
                 await chatVm.sendInvoiceMessage(
-                  sellerId: widget.book.sellerId,
-                  roomId: roomId,
-                  address: "Kurir: $kurirName\nAlamat: $alamatFinal",
-                  title: widget.book.title,
-                  author: widget.book.author ?? "Unknown Author",
-                  image: widget.book.image,
-                  totalPrice: totalBayarFormated,
-                );
+                roomId: roomId,
+                address: "Kurir: $kurirName\nAlamat: $alamatFinal",
+                title: widget.book.title,
+                author: widget.book.author,
+                image: widget.book.image,
+                totalPrice: totalBayarFormated,
+                sellerId: widget.book.sellerId,
+              );
 
                 if (context.mounted) {
                   // 🟢 REVISI: Menggunakan pushAndRemoveUntil agar saat di-back langsung balik ke Inbox Utama (Page Pertama)
