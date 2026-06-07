@@ -14,6 +14,7 @@ class BookModel {
   final String year;
   final String isbn;
   final String condition;
+  
 
   final int stock; // Untuk menampilkan Stok Lapak
   final int likes; // Untuk menampilkan jumlah Orang yang menyukai
@@ -94,14 +95,23 @@ class BookModel {
     );
   }
 
-  factory BookModel.fromMap(Map<String, dynamic> map, String documentId) {
-    // 🟢 FUNGSI PENGAMANAN RATING (Sudah Bagus!)
-    double parsedRating = 0.0;
-    if (map['rating'] is num) {
-      parsedRating = (map['rating'] as num).toDouble();
-    } else if (map['rating'] != null && map['rating'].toString().isNotEmpty) {
-      parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
-    }
+  factory BookModel.fromMap(
+  Map<String, dynamic> map,
+  String documentId,
+) {
+  double parsedRating = 0.0;
+
+  if (map['rating'] is num) {
+    parsedRating =
+        (map['rating'] as num).toDouble();
+  } else if (map['rating'] != null &&
+      map['rating'].toString().isNotEmpty) {
+    parsedRating =
+        double.tryParse(
+              map['rating'].toString(),
+            ) ??
+            0.0;
+  }
 
     return BookModel(
       id: documentId,

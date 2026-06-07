@@ -14,7 +14,9 @@ class PesananScreen extends StatefulWidget {
   State<PesananScreen> createState() => _PesananScreenState();
 }
 
-class _PesananScreenState extends State<PesananScreen> {
+class _PesananScreenState extends State<PesananScreen> 
+ with SingleTickerProviderStateMixin {
+   bool isSellerView = false;
   late PesananViewModel _pesananController;
 
   @override
@@ -68,13 +70,77 @@ class _PesananScreenState extends State<PesananScreen> {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildBerlangsungTab(),
-            _buildSelesaiTab(),
-            _buildDibatalkanTab(),
-          ],
-        ),
+       body: Column(
+  children: [
+
+    Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  isSellerView = false;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: !isSellerView
+                      ? const Color(0xFFA23914)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Text(
+                  "Saya Membeli",
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  isSellerView = true;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSellerView
+                      ? const Color(0xFFA23914)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Text(
+                  "Saya Menjual",
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+
+    Expanded(
+      child: TabBarView(
+        children: [
+          _buildBerlangsungTab(),
+          _buildSelesaiTab(),
+          _buildDibatalkanTab(),
+        ],
+      ),
+    ),
+  ],
+),
       ),
     );
   }
@@ -89,7 +155,12 @@ class _PesananScreenState extends State<PesananScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('orders')
-          .where('buyerId', isEqualTo: myId)
+          .where(
+            isSellerView
+                ? 'sellerId'
+                : 'buyerId',
+            isEqualTo: myId,
+          )
           .where('statusPesanan', whereIn: ['disetujui', 'menunggu_konfirmasi', 'dikemas', 'dikirim'])
           .snapshots(),
       builder: (context, snapshot) {
@@ -109,7 +180,7 @@ class _PesananScreenState extends State<PesananScreen> {
             final docId = orders[index].id;
             final item = orders[index].data() as Map<String, dynamic>;
             final String statusStr = item['statusPesanan'] ?? 'disetujui';
-            
+           
             // ==========================================================
             // KODE SAKTI: PINDAHKAN MATA KE TERMINAL VS CODE UNTUK MELIHAT INI
             // ==========================================================
@@ -162,58 +233,87 @@ class _PesananScreenState extends State<PesananScreen> {
                     ],
                   ),
                   const Divider(color: Color(0xFFEFEFEF), height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () {
-                          print("TOMBOL DIKLIK: Mengirim Seller ID -> '$sellerId'");
-                          if (sellerId.isNotEmpty) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ChatRoomScreen(sellerId: sellerId),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('ID Penjual tidak valid.')),
-                            );
-                          }
-                        },
-                        style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFD3C2B5))),
-                        child: const Text('Chat Seller', style: TextStyle(color: Colors.black, fontSize: 12)),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {
+                 Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+
+                  if (!isSellerView)
+                    OutlinedButton(
+                      onPressed: () {
+                        print("TOMBOL DIKLIK: Mengirim Seller ID -> '$sellerId'");
+
+                        if (sellerId.isNotEmpty) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => OrderDetailScreen(
-                                roomId: roomId,
-                                messageId: docId,
-                                bookTitle: item['bookTitle'] ?? '',
-                                totalPrice: (item['price'] ?? '').toString(),
-                                authorName: item['author'] ?? '',
-                                addressInfo: item['alamat'] ?? item['address'] ?? 'Alamat tidak tertera', 
-                                coverImage: item['cover'] ?? '',
-                                currentStatus: statusStr,
-                                isSeller: false, 
-                                isOfferType: false,
-                                chatVm: chatVm,
-                              ),
+                              builder: (context) =>
+                                  ChatRoomScreen(sellerId: sellerId),
                             ),
                           );
-                        },
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4A352F)),
-                        child: const Text('Lihat Detail', style: TextStyle(color: Colors.white, fontSize: 12)),
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(
+                          color: Color(0xFFD3C2B5),
+                        ),
                       ),
+                      child: const Text(
+                        'Chat Seller',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+
+                  if (!isSellerView)
+                    const SizedBox(width: 10),
+                     ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderDetailScreen(
+          roomId: roomId,
+          messageId: docId,
+          bookTitle: item['bookTitle'] ?? '',
+          totalPrice: (item['price'] ?? '').toString(),
+          authorName: item['author'] ?? '',
+          addressInfo:
+              item['alamat'] ??
+              item['address'] ??
+              'Alamat tidak tertera',
+          coverImage: item['cover'] ?? '',
+          currentStatus: statusStr,
+
+          isSeller: isSellerView,
+
+          isOfferType: false,
+          chatVm: chatVm,
+        ),
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFF4A352F),
+  ),
+  child: Text(
+    isSellerView
+        ? 'Kelola Pesanan'
+        : 'Lihat Detail',
+    style: const TextStyle(
+      color: Colors.white,
+      fontSize: 12,
+    ),
+  ),
+),
                     ],
                   )
+                  
                 ],
               ),
             );
+            
           },
         );
       },
@@ -230,7 +330,12 @@ class _PesananScreenState extends State<PesananScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('orders')
-          .where('buyerId', isEqualTo: myId)
+          .where(
+  isSellerView
+      ? 'sellerId'
+      : 'buyerId',
+  isEqualTo: myId,
+)
           .where('statusPesanan', isEqualTo: 'selesai')
           .snapshots(),
       builder: (context, snapshot) {
@@ -319,7 +424,7 @@ class _PesananScreenState extends State<PesananScreen> {
                                 addressInfo: item['alamat'] ?? item['address'] ?? 'Alamat tidak tertera',
                                 coverImage: item['cover'] ?? '',
                                 currentStatus: 'selesai',
-                                isSeller: false,
+                                isSeller: isSellerView,
                                 isOfferType: false,
                                 chatVm: chatVm,
                               ),
@@ -360,9 +465,15 @@ class _PesananScreenState extends State<PesananScreen> {
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('orders')
-          .where('buyerId', isEqualTo: myId)
-          .where('statusPesanan', isEqualTo: 'dibatalkan')
+         .collection('orders')
+        .where(
+          isSellerView
+              ? 'sellerId'
+              : 'buyerId',
+          isEqualTo: myId,
+        )
+        .where('statusPesanan', isEqualTo: 'dibatalkan')
+         
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -434,7 +545,7 @@ class _PesananScreenState extends State<PesananScreen> {
                                 addressInfo: item['alamat'] ?? item['address'] ?? 'Alamat tidak tertera',
                                 coverImage: item['cover'] ?? '',
                                 currentStatus: 'dibatalkan',
-                                isSeller: false,
+                               isSeller: isSellerView,
                                 isOfferType: false,
                                 chatVm: chatVm,
                               ),

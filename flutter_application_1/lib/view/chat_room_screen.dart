@@ -823,7 +823,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         child: OutlinedButton(
                           onPressed: widget.isOfferType ? _rejectOffer : _cancelOrder,
                           style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.redAccent, width: 1.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                          child: Text(widget.isOfferType ? "Tolak Penawaran" : "Batalkan Pesanan", style: GoogleFonts.plusJakartaSans(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+                         child: Text(
+  widget.isOfferType
+      ? "Tolak Penawaran"
+      : "Tolak Pesanan", style: GoogleFonts.plusJakartaSans(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14)),
                         ),
                       ),
                     ),
