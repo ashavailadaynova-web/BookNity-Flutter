@@ -4,10 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
-// --- BAGIAN IMPORT UTAMA & LAYOUT ---
+// --- BAGIAN IMPORT UTAMA, ONBOARDING & LOGIN ---
 import 'package:flutter_application_1/main_screen.dart';
-
-// --- BAGIAN IMPORT ONBOARDING & LOGIN ---
 import 'package:flutter_application_1/view/Login%20Register/splash_screen.dart';
 import 'package:flutter_application_1/view/Login%20Register/onboarding_splash.dart';
 import 'package:flutter_application_1/view/Login%20Register/onboarding2_splash.dart';
@@ -15,8 +13,7 @@ import 'package:flutter_application_1/view/Login%20Register/onboarding3_splash.d
 import 'package:flutter_application_1/view/Login%20Register/login_screen.dart';
 import 'package:flutter_application_1/view/Login%20Register/register_screen.dart';
 
-// Mengimpor halaman utama & fitur baru dari tim kelompok
-import 'main_screen.dart';
+// --- BAGIAN IMPORT FITUR & VIEWMODEL ---
 import 'view/Beranda/home_screen.dart';
 import 'view/Profile/profile_screen.dart';
 import 'view/Profile/help_center_screen.dart';
@@ -41,8 +38,6 @@ void main() async {
         ChangeNotifierProvider(create: (_) => BookViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => UserViewModel()),
-        // 🟢 SEKARANG SUDAH DITAMBAHKAN BIAR DAFTAR ALAMAT TIDAK EROR MERAH LAGI:
-        ChangeNotifierProvider(create: (_) => AddressViewModel()),
 
         ListenableProvider<ChatViewModel>(create: (_) => ChatViewModel()),
       ],
@@ -61,7 +56,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
 
-      // Langsung arahkan ke SplashScreen agar tidak langsung loncat ke Beranda
+      // 🟢 KODE YANG DIUBAH: Langsung arahkan ke SplashScreen agar tidak langsung loncat ke Beranda
       home: const SplashScreen(),
 
       // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
@@ -87,8 +82,7 @@ class MainOnboardingContainer extends StatefulWidget {
   const MainOnboardingContainer({super.key});
 
   @override
-  State<MainOnboardingContainer> createState() =>
-      _MainOnboardingContainerState();
+  State<MainOnboardingContainer> createState() => _MainOnboardingContainerState();
 }
 
 class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
@@ -100,9 +94,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
   void initState() {
     super.initState();
     // Mengatur geser otomatis setiap 4 detik
-    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (
-      Timer timer,
-    ) {
+    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
       if (_currentPage < 2) {
         _currentPage++;
         if (_pageController.hasClients) {
@@ -139,7 +131,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
           });
         },
         children: [
-          OnboardingScreen(), // Halaman 1
+          OnboardingScreen(),  // Halaman 1
           OnboardingScreen2(), // Halaman 2
           OnboardingScreen3(), // Halaman 3
         ],
