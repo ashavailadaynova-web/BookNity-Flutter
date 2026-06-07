@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../view/add_offer_screen.dart';
 import '../view/chat_room_screen.dart';
+import 'Pesanan/payment_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final BookModel book;
@@ -39,16 +40,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     super.dispose();
   }
 
-  Future<void> _toggleWishlist(String docId, bool currentStatus) async {
-    try {
-      await FirebaseFirestore.instance.collection('books').doc(docId).update({
-        'isFavorite': !currentStatus,
-      });
-    } catch (e) {
-      debugPrint('Gagal update wishlist: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,8 +65,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         ),
         centerTitle: true,
       ),
-
-      // Menggunakan Column agar Bottom Bar di bawah tetap terkunci sempurna
       body: Column(
         children: [
           // 1. AREA KONTEN (Bisa di-scroll)
@@ -162,9 +151,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                   index < widget.book.rating.floor()
                                       ? Icons.star_rounded
                                       : (index < widget.book.rating &&
-                                            widget.book.rating % 1 != 0)
-                                      ? Icons.star_half_rounded
-                                      : Icons.star_outline_rounded,
+                                              widget.book.rating % 1 != 0)
+                                          ? Icons.star_half_rounded
+                                          : Icons.star_outline_rounded,
                                   color: Colors.amber,
                                   size: 18,
                                 );
@@ -252,7 +241,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     ],
                   ),
 
-                  // KONTEN TABBAR (DIBUNGKUS ANIMATEDBUILDER AGAR RESPONSIF SAAT DIKLIK)
+                  // KONTEN TABBAR
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: AnimatedBuilder(
@@ -360,15 +349,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       CircleAvatar(
                         radius: 22,
                         backgroundColor: Colors.grey.shade300,
-                        backgroundImage:
-                            widget.book.sellerAvatar.startsWith('http')
+                        backgroundImage: widget.book.sellerAvatar.startsWith('http')
                             ? NetworkImage(widget.book.sellerAvatar)
                             : (widget.book.sellerAvatar.isNotEmpty
-                                      ? AssetImage(widget.book.sellerAvatar)
-                                      : const AssetImage(
-                                          'assets/images/default_avatar.png',
-                                        ))
-                                  as ImageProvider,
+                                ? AssetImage(widget.book.sellerAvatar)
+                                : const AssetImage(
+                                    'assets/images/default_avatar.png',
+                                  )) as ImageProvider,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -383,19 +370,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 color: Colors.black87,
                               ),
                             ),
+                            Text(
+                              widget.book.storeName,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       OutlinedButton(
                         onPressed: () async {
-                          // 🟢 LANGKAH PENYELAMAT: Validasi sebelum masuk ke Firestore
                           final sId = widget.book.sellerId;
-                          if (sId == null || sId.trim().isEmpty) {
+                          if (sId.trim().isEmpty) {
                             _showSnackBar(
                               context,
-                              'Gagal melihat toko: ID Penjual kosong atau tidak valid pada buku ini.',
+                              'Gagal melihat toko: ID Penjual tidak valid.',
                             );
-                            return; // Stop fungsi di sini, jangan biarkan lanjut ke bawah agar tidak crash
+                            return;
                           }
 
                           _showLoadingDialog(context);
@@ -403,13 +396,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             DocumentSnapshot sellerDoc = await FirebaseFirestore
                                 .instance
                                 .collection('users')
-                                .doc(
-                                  sId,
-                                ) // 🟢 Aman karena sudah divalidasi di atas
+                                .doc(sId)
                                 .get();
 
-                            if (context.mounted)
-                              Navigator.pop(context); // Tutup loading
+                            if (context.mounted) Navigator.pop(context);
 
                             if (sellerDoc.exists && context.mounted) {
                               Map<String, dynamic> sellerData =
@@ -419,14 +409,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => OtherProfileScreen(
-                                    sellerId: sId,
+                                     sellerId: widget.book.sellerId,
                                     name:
                                         sellerData['name'] ??
                                         sellerData['username'] ??
                                         widget
                                             .book
                                             .storeName, // Tambahkan fallback username
-                                    joinYear: sellerData['joinYear'] ?? '2026',
+                                    joinYear: sellerData['joinYear'] ?? '2024',
                                     followers:
                                         '${sellerData['followers'] ?? 0}',
                                     following:
@@ -434,16 +424,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                     bio:
                                         sellerData['bio'] ??
                                         'Belum ada biodata toko.',
-                                    totalTerjual:
-                                        sellerData['totalTerjual'] ?? 0,
-                                    totalMembeli:
-                                        sellerData['totalMembeli'] ?? 0,
+                                    totalTerjual: sellerData['totalTerjual'] ?? 0,
+                                    totalMembeli: sellerData['totalMembeli'] ?? 0,
                                     penilaian: sellerData['rating'] != null
                                         ? (sellerData['rating'] as num)
-                                              .toDouble()
+                                            .toDouble()
                                         : widget.book.rating,
-                                    profileType:
-                                        sellerData['profileType'] ?? 'seller',
+                                    profileType: sellerData['profileType'] ?? 'seller',
                                   ),
                                 ),
                               );
@@ -480,7 +467,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                   const SizedBox(height: 24),
 
-                  // AREA BUKU SERUPA
+                  // AREA BUKU SERUBA
                   const Row(
                     children: [
                       Text(
@@ -561,55 +548,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           separatorBuilder: (context, index) =>
                               const SizedBox(width: 16),
                           itemBuilder: (context, index) {
-                            final doc = recommendedBooks[index];
-                            final bookData = doc.data() as Map<String, dynamic>;
-                            final bool currentIsFavorite =
-                                bookData['isFavorite'] ?? false;
-
-                            // 🟢 BUNGKUS DENGAN SIZEDBOX AGAR MEMILIKI UKURAN PASTI (Mencegah Unbounded Constraints)
-                            return SizedBox(
-                              width: 150, // 👈 Kunci lebar card di sini
-                              height: 250, // 👈 Kunci tinggi card di sini
-                              child: BuyerProductCard(
-                                imageUrl:
-                                    bookData['image'] ??
-                                    'assets/images/placeholder.jpg',
-                                title: bookData['title'] ?? 'Tanpa Judul',
-                                author: bookData['author'] ?? 'Anonim',
-                                price: 'Rp ${bookData['price'] ?? 0}',
-                                // 🟢 Penyelamat Null Check: Jangan gunakan parsing paksa jika ragu tipe datanya
-                                rating: bookData['rating'] != null
-                                    ? '${bookData['rating']}'
-                                    : '0.0',
-                                storeName: bookData['storeName'] ?? 'Toko Buku',
-                                isFavorite:
-                                    currentIsFavorite, // Ambil status asli dari Firestore
-                                onTap: () {
-                                  final clickedBook = BookModel.fromMap(
-                                    doc.data() as Map<String, dynamic>,
-                                    doc.id,
-                                  );
-
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ProductDetailScreen(
-                                        book: clickedBook,
-                                      ),
-                                    ),
-                                  );
-                                },
-
-                                // 🟢 SEKARANG DIISI: Panggil fungsi toggle wishlist saat tombol love ditekan
-                                onFavoriteTap: () async {
-                                  await _toggleWishlist(
-                                    doc.id,
-                                    currentIsFavorite,
-                                  );
-                                  // Karena kita menggunakan StreamBuilder, layar akan otomatis ter-refresh
-                                  // dan warna ikon love akan langsung berubah tanpa perlu setState!
-                                },
-                              ),
+                            final bookData =
+                                recommendedBooks[index].data()
+                                    as Map<String, dynamic>;
+                            return BuyerProductCard(
+                              imageUrl:
+                                  bookData['imageUrl'] ??
+                                  'assets/images/placeholder.jpg',
+                              title: bookData['title'] ?? 'Tanpa Judul',
+                              author: bookData['author'] ?? 'Anonim',
+                              price: 'Rp ${bookData['price'] ?? 0}',
+                              rating: '${bookData['rating'] ?? 0.0}',
+                              storeName: bookData['storeName'] ?? 'Toko Buku',
+                              isFavorite: bookData['isFavorite'] ?? false,
+                              onTap: () {},
+                              onFavoriteTap: () {},
                             );
                           },
                         );
@@ -659,36 +612,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         size: 20,
                       ),
                       onPressed: () {
-                        // 1. Ambil user yang sedang login saat ini via FirebaseAuth
                         final currentUser = FirebaseAuth.instance.currentUser;
 
                         if (currentUser == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Silakan login terlebih dahulu untuk chat penjual.',
-                              ),
-                            ),
+                          _showSnackBar(
+                            context,
+                            'Silakan login terlebih dahulu untuk chat penjual.',
                           );
                           return;
                         }
 
                         final buyerId = currentUser.uid;
-                        final sellerId = widget
-                            .book
-                            .sellerId; // Pastikan model buku kamu punya field sellerId
+                        final sellerId = widget.book.sellerId;
 
-                        // 2. Cegah jika pembeli mencoba chat diri sendiri (pemilik buku)
                         if (buyerId == sellerId) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Ini adalah buku Anda sendiri.'),
-                            ),
+                          _showSnackBar(
+                            context,
+                            'Ini adalah buku Anda sendiri.',
                           );
                           return;
                         }
 
-                        // 3. Pindah ke halaman ChatRoomScreen dengan HANYA membawa sellerId
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -705,7 +649,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       height: 48,
                       child: OutlinedButton(
                         onPressed: () {
-                          // 👇 PERBAIKAN: Menggunakan widget.book
                           final cleanPriceString = widget.book.price
                               .replaceAll('.', '')
                               .replaceAll(',', '');
@@ -716,23 +659,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             context,
                             MaterialPageRoute(
                               builder: (context) => OfferScreen(
-                                productId:
-                                    widget.book.id ??
-                                    '', // 👇 PERBAIKAN: widget.book
-                                title: widget
-                                    .book
-                                    .title, // 👇 PERBAIKAN: widget.book
-                                author: widget
-                                    .book
-                                    .author, // 👇 PERBAIKAN: widget.book
-                                imageUrl: widget
-                                    .book
-                                    .image, // 👇 PERBAIKAN: widget.book
-                                originalPrice: parsedPrice,
-                                sellerId: widget
-                                    .book
-                                    .sellerId, // 👇 PERBAIKAN: widget.book
-                              ),
+                                    productId: widget.book.id ?? '',
+                                    title: widget.book.title,
+                                    author: widget.book.author,
+                                    imageUrl: widget.book.image,
+                                    originalPrice: parsedPrice,
+                                    sellerId: widget.book.sellerId,
+                                  ),
                             ),
                           );
                         },
@@ -761,7 +694,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          // Navigasi dengan membawa objek data buku ke halaman pembayaran
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PaymentScreen(book: widget.book),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFA23914),
                           foregroundColor: Colors.white,
@@ -791,102 +732,114 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   Widget _buildImagePlaceholder() {
     return Container(
-      color: const Color(0xFFEFEBE4),
-      child: const Icon(Icons.book, size: 50, color: Colors.grey),
-    );
-  }
-
-  void _showLoadingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Color(0xFFA23914)),
+      color: Colors.grey.shade300,
+      child: const Center(
+        child: Icon(
+          Icons.menu_book_rounded,
+          size: 50,
+          color: Colors.grey,
+        ),
       ),
     );
-  }
-
-  void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildTag(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFFECE6DA),
-        borderRadius: BorderRadius.circular(8),
+        color: const Color(0xFFF5F0E6),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: const TextStyle(
+          color: Color(0xFFA23914),
           fontSize: 11,
-          color: Colors.grey.shade800,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(
+    String title,
+    String value,
+  ) {
     return Column(
       children: [
         Text(
-          label,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
-          value,
+          title,
           style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Colors.grey,
+            fontSize: 11,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildReviewItem(String name, String rating, String comment) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              name,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: Colors.black87,
-              ),
+  Widget _buildReviewItem(
+    String name,
+    String rating,
+    String review,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            name,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
             ),
-            Text(
-              rating,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                color: Colors.amber,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          comment,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey.shade700,
-            height: 1.4,
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(rating),
+          const SizedBox(height: 4),
+          Text(review),
+        ],
+      ),
+    );
+  }
+
+  void _showSnackBar(
+    BuildContext context,
+    String message,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
+
+  void _showLoadingDialog(
+    BuildContext context,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
     );
   }
 }

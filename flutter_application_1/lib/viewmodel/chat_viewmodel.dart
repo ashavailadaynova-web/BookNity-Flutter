@@ -50,17 +50,136 @@ class ChatViewModel extends ChangeNotifier {
       type: MessageType.text,
     );
 
-    await _firestore
+    
+    WriteBatch batch = _firestore.batch();
+
+    // 1. Simpan pesan ke sub-koleksi messages
+    DocumentReference messageRef = _firestore
         .collection('chat_rooms')
         .doc(roomId)
         .collection('messages')
-        .add(newMessage.toMap());
+        .doc();
+    batch.set(messageRef, newMessage.toMap());
+
+    // 2. Update data root chat_rooms untuk kebutuhan Inbox
+    DocumentReference roomRef = _firestore.collection('chat_rooms').doc(roomId);
+    List<String> userIds = roomId.split("_");
+    
+    batch.set(roomRef, {
+      'participants': userIds,
+      'lastMessage': text.trim(),
+      'lastTime': FieldValue.serverTimestamp(),
+      'unread': true,
+    }, SetOptions(merge: true));
+
+    await batch.commit();
+    notifyListeners();
+  }
+
+  // Mengirim Card Invoice Konfirmasi Pembayaran ke Firestore & Otomatis ke My Order
+  Future<void> sendInvoiceMessage({
+    required String roomId,
+    required String address,
+    required String title,
+    required String author,
+    required String image,
+    required String totalPrice,
+    String? sellerId,
+  }) async {
+    try {
+
+    print("SELLER ID = $sellerId")  ;
+    print("ROOM ID = $roomId");     
+
+      final now = DateTime.now();
+
+      DocumentReference messageRef = _firestore
+          .collection('chat_rooms')
+          .doc(roomId)
+          .collection('messages')
+          .doc();
+
+      final invoiceMessage = MessageModel(
+        id: messageRef.id,
+        senderId: currentUserId,
+        message: address.trim(),
+        timestamp: now,
+        type: MessageType.invoice,
+        bookTitle: title,
+        author: author,
+        cover: image,
+        price: totalPrice,
+        statusPesanan: "menunggu_konfirmasi",
+      );
+
+      WriteBatch batch = _firestore.batch();
+
+      batch.set(messageRef, invoiceMessage.toMap());
+
+      DocumentReference roomRef = _firestore.collection('chat_rooms').doc(roomId);
+      List<String> userIds = roomId.split("_");
+      batch.set(roomRef, {
+        'participants': userIds,
+        'lastMessage': "Mengirimkan konfirmasi pembayaran (Invoice)",
+        'lastTime': FieldValue.serverTimestamp(),
+        'unread': true,
+      }, SetOptions(merge: true));
+
+      DocumentReference orderRef = _firestore.collection('orders').doc(messageRef.id);
+      
+      batch.set(orderRef, {
+        'orderId': messageRef.id,
+        'roomId': roomId,
+        'messageId': messageRef.id,
+        'buyerId': currentUserId, 
+        'sellerId': sellerId ?? '', 
+        'bookTitle': title,
+        'author': author,
+        'price': totalPrice,
+        'cover': image,
+        'statusPesanan': 'menunggu_konfirmasi',
+        'address': address.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
+      notifyListeners();
+    } catch (e) {
+      print("Gagal mengirim invoice ke chat & orders: $e");
+    }
+  }
+
+  // Update Status Urutan Alur Pesanan di Invoice (Sinkronisasi Otomatis Dua Arah)
+  Future<void> updateInvoiceStatus({
+    required String roomId,
+    required String messageId,
+    required String newStatus,
+  }) async {
+    try {
+      if (messageId.isEmpty) return;
+      
+      WriteBatch batch = _firestore.batch();
+
+      DocumentReference messageRef = _firestore
+          .collection('chat_rooms')
+          .doc(roomId)
+          .collection('messages')
+          .doc(messageId);
+      batch.update(messageRef, {'statusPesanan': newStatus});
+
+      DocumentReference orderRef = _firestore.collection('orders').doc(messageId);
+      batch.update(orderRef, {'statusPesanan': newStatus});
+
+      await batch.commit();
+      notifyListeners();
+    } catch (e) {
+      print("Gagal mengupdate status pesanan secara sinkron: $e");
+    }
   }
 
   Future<Map<String, dynamic>?> getSellerProfile(String sellerId) async {
     try {
-      // Sesuaikan nama collection 'users' dengan nama collection user di Firebase milikmu
-      DocumentSnapshot doc = await FirebaseFirestore.instance
+      DocumentSnapshot doc = await _firestore
           .collection('users')
           .doc(sellerId)
           .get();
@@ -74,7 +193,7 @@ class ChatViewModel extends ChangeNotifier {
     return null;
   }
 
-  // 🟢 PERBAIKAN ERROR 2: Fungsi sendProductOffer dengan parameter lengkap
+  // Fungsi sendProductOffer dengan parameter lengkap
   Future<void> sendProductOffer({
     required String sellerId,
     required String bookId,
@@ -95,17 +214,32 @@ class ChatViewModel extends ChangeNotifier {
       bookTitle: title,
       author: author,
       cover: image,
-      price: offeredPrice.toString(), // Disimpan sebagai string penawaran
+      price: offeredPrice.toString(),
     );
 
-    await _firestore
+    WriteBatch batch = _firestore.batch();
+
+    DocumentReference messageRef = _firestore
         .collection('chat_rooms')
         .doc(roomId)
         .collection('messages')
-        .add(newOffer.toMap());
+        .doc();
+    batch.set(messageRef, newOffer.toMap());
+
+    DocumentReference roomRef = _firestore.collection('chat_rooms').doc(roomId);
+    List<String> userIds = roomId.split("_");
+    batch.set(roomRef, {
+      'participants': userIds,
+      'lastMessage': "Mengajukan penawaran Rp $offeredPrice",
+      'lastTime': FieldValue.serverTimestamp(),
+      'unread': true,
+    }, SetOptions(merge: true));
+
+    await batch.commit();
+    notifyListeners();
   }
 
-  // 🟢 PERBAIKAN ERROR 5: Fungsi sendProductPreview dengan parameter lengkap
+  // Fungsi sendProductPreview dengan parameter lengkap
   Future<void> sendProductPreview({
     required String sellerId,
     required String bookId,
@@ -128,28 +262,80 @@ class ChatViewModel extends ChangeNotifier {
       price: price.toString(),
     );
 
-    await _firestore
+    WriteBatch batch = _firestore.batch();
+
+    DocumentReference messageRef = _firestore
         .collection('chat_rooms')
         .doc(roomId)
         .collection('messages')
-        .add(previewMessage.toMap());
+        .doc();
+    batch.set(messageRef, previewMessage.toMap());
+
+    DocumentReference roomRef = _firestore.collection('chat_rooms').doc(roomId);
+    List<String> userIds = roomId.split("_");
+    batch.set(roomRef, {
+      'participants': userIds,
+      'lastMessage': "Tertarik dengan buku: $title",
+      'lastTime': FieldValue.serverTimestamp(),
+      'unread': true,
+    }, SetOptions(merge: true));
+
+    await batch.commit();
+    notifyListeners();
   }
 
-  // Fungsi Update Status Tawaran (Diterima / Ditolak oleh Penjual) di Firestore
+  // FUNGSI UNTUK MENERIMA PENAWARAN & OTOMATIS MASUK KE MY ORDER
   Future<void> updateOfferStatus({
     required String roomId,
     required String messageId,
-    required MessageType newStatus,
+    required String newStatus, 
   }) async {
-    String noticeText = newStatus == MessageType.offerAccepted
-        ? "Penawaran Anda telah diterima oleh Penjual!"
-        : "Penawaran Anda ditolak oleh Penjual.";
+    try {
+      DocumentSnapshot messageDoc = await _firestore
+          .collection('chat_rooms')
+          .doc(roomId)
+          .collection('messages')
+          .doc(messageId)
+          .get();
 
-    await _firestore
-        .collection('chat_rooms')
-        .doc(roomId)
-        .collection('messages')
-        .doc(messageId)
-        .update({'type': newStatus.name, 'message': noticeText});
+      if (!messageDoc.exists) return;
+      
+      Map<String, dynamic> msgData = messageDoc.data() as Map<String, dynamic>;
+      WriteBatch batch = _firestore.batch();
+
+      DocumentReference messageRef = _firestore
+          .collection('chat_rooms')
+          .doc(roomId)
+          .collection('messages')
+          .doc(messageId);
+          
+      batch.update(messageRef, {
+        'type': newStatus, 
+        'statusPesanan': 'disetujui', 
+      });
+
+      DocumentReference orderRef = _firestore.collection('orders').doc(messageId);
+      
+      batch.set(orderRef, {
+        'orderId': messageId,
+        'roomId': roomId,
+        'messageId': messageId,
+        'buyerId': msgData['senderId'],       
+        'sellerId': currentUserId,            
+        'bookTitle': msgData['bookTitle'] ?? 'Buku Novel',
+        'author': msgData['author'] ?? 'Penulis',
+        'price': msgData['price'] ?? '0',
+        'cover': msgData['cover'] ?? '',
+        'statusPesanan': 'disetujui',         
+        'address': '',                        
+        'createdAt': FieldValue.serverTimestamp(), 
+      });
+
+      await batch.commit();
+      notifyListeners();
+    } catch (e) {
+      print("Gagal menyetujui penawaran & membuat order: $e");
+      rethrow;
+    }
   }
 }
