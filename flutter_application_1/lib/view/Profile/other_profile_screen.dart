@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/buyer_product_card.dart';
 import '../../model/book_model.dart';
@@ -53,11 +54,56 @@ class OtherProfileScreen extends StatefulWidget {
 
 class _OtherProfileScreenState extends State<OtherProfileScreen> {
   late String currentType;
+  final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+  bool isFollowing = false;
+  int followersCount = 0;
 
   @override
   void initState() {
     super.initState();
     currentType = widget.profileType;
+    followersCount = 0;
+
+    _checkFollowStatus();
+    _fetchFollowersCount();
+  }
+
+  Future<void> _fetchFollowersCount() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('social')
+          .where(
+            'followingId',
+            isEqualTo: widget.sellerId,
+          ) // Cari siapa saja yang memfollow penjual ini
+          .get();
+
+      setState(() {
+        followersCount = snapshot
+            .docs
+            .length; // Set angkanya sesuai jumlah dokumen yang ditemukan
+      });
+    } catch (e) {
+      debugPrint('Gagal mengambil jumlah followers: $e');
+    }
+  }
+
+  // 🟢 Fungsi mengecek apakah kita sudah memfollow penjual ini
+  Future<void> _checkFollowStatus() async {
+    if (currentUserId == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('social')
+        .doc(
+          '$currentUserId-${widget.sellerId}',
+        ) // ID Unik gabungan pembeli-penjual
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        isFollowing = true;
+      });
+    }
   }
 
   Future<void> _toggleWishlist(String docId, bool currentStatus) async {
@@ -67,6 +113,53 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
       });
     } catch (e) {
       debugPrint('Gagal update wishlist: $e');
+    }
+  }
+
+  // 🟢 Fungsi Eksekusi Follow / Unfollow
+  Future<void> _toggleFollow() async {
+    if (currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan login terlebih dahulu untuk mengikuti.'),
+        ),
+      );
+      return;
+    }
+
+    // Biar tidak bisa follow diri sendiri
+    if (currentUserId == widget.sellerId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kamu tidak bisa mengikuti tokomu sendiri.'),
+        ),
+      );
+      return;
+    }
+
+    final followDocRef = FirebaseFirestore.instance
+        .collection('social')
+        .doc('$currentUserId-${widget.sellerId}');
+
+    if (isFollowing) {
+      // ❌ Jika sedang memfollow -> Maka Hapus (Unfollow)
+      await followDocRef.delete();
+      setState(() {
+        isFollowing = false;
+        if (followersCount > 0)
+          followersCount--; // Kurangi angka pengikut di layar
+      });
+    } else {
+      //  Jika belum memfollow -> Maka Tambah (Follow)
+      await followDocRef.set({
+        'followerId': currentUserId, // ID Pembeli
+        'followingId': widget.sellerId, // ID Penjual (Toko)
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      setState(() {
+        isFollowing = true;
+        followersCount++; // Tambah angka pengikut di layar
+      });
     }
   }
 
@@ -150,7 +243,7 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildFollowCounter(widget.followers, 'PENGIKUT'),
+                _buildFollowCounter('$followersCount', 'PENGIKUT'),
                 Container(
                   width: 1,
                   height: 20,
@@ -250,36 +343,59 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 6. TIGA KARTU KOTAK STATISTIK JUAL/BELI
-            Row(
-              children: [
-                Expanded(
-                  child: _buildGridStatItem(
-                    Icons.menu_book_rounded,
-                    '${widget.totalTerjual}',
-                    'TERJUAL',
-                    const Color(0xFFF5E6E1),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildGridStatItem(
-                    Icons.local_fire_department_rounded,
-                    '${widget.totalMembeli}',
-                    'MEMBELI',
-                    const Color(0xFFFBECE6),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildGridStatItem(
-                    Icons.stars_rounded,
-                    '${widget.penilaian}',
-                    'PENILAIAN',
-                    const Color(0xFFFDF0D5),
-                  ),
-                ),
-              ],
+            // 6. TIGA KARTU KOTAK STATISTIK JUAL/BELI (REALTIME VERSION)
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(widget.sellerId) // Pantau dokumen penjual ini
+                  .snapshots(),
+              builder: (context, snapshot) {
+                // Jika masih loading atau data kosong, pakai data awal dari widget dulu biar ga kosong
+                int terjual = widget.totalTerjual;
+                int membeli = widget.totalMembeli;
+                double rating = widget.penilaian;
+
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  final userData =
+                      snapshot.data!.data() as Map<String, dynamic>;
+                  terjual = userData['totalTerjual'] ?? widget.totalTerjual;
+                  membeli = userData['totalMembeli'] ?? widget.totalMembeli;
+                  rating = userData['rating'] != null
+                      ? (userData['rating'] as num).toDouble()
+                      : widget.penilaian;
+                }
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildGridStatItem(
+                        Icons.menu_book_rounded,
+                        '$terjual', // 🟢 Update otomatis
+                        'TERJUAL',
+                        const Color(0xFFF5E6E1),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildGridStatItem(
+                        Icons.local_fire_department_rounded,
+                        '$membeli', // 🟢 Update otomatis
+                        'MEMBELI',
+                        const Color(0xFFFBECE6),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildGridStatItem(
+                        Icons.stars_rounded,
+                        '$rating', // 🟢 Update otomatis
+                        'PENILAIAN',
+                        const Color(0xFFFDF0D5),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 32),
 
@@ -320,34 +436,12 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
   }
 
   Widget _buildPrimaryActionButton() {
-    if (currentType == 'martin_follow_back') {
-      return SizedBox(
-        height: 44,
-        child: ElevatedButton(
-          onPressed: () {
-            setState(() => currentType = 'martin_following');
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2D2522),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          child: const Text(
-            'Ikuti Balik',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-        ),
-      );
-    } else if (currentType == 'martin_following') {
+    if (isFollowing) {
+      // 🟢 TAMPILAN JIKA SUDAH MENGIKUTI (Tombol Outlined / Putih)
       return SizedBox(
         height: 44,
         child: OutlinedButton(
-          onPressed: () {
-            setState(() => currentType = 'martin_follow_back');
-          },
+          onPressed: _toggleFollow, // Panggil fungsi toggle
           style: OutlinedButton.styleFrom(
             backgroundColor: Colors.white,
             side: BorderSide(color: Colors.grey.shade300, width: 1.5),
@@ -366,12 +460,11 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
         ),
       );
     } else {
+      // 🟢 TAMPILAN JIKA BELUM MENGIKUTI / IKUTI BALIK (Tombol Gelap)
       return SizedBox(
         height: 44,
         child: ElevatedButton(
-          onPressed: () {
-            setState(() => currentType = 'martin_following');
-          },
+          onPressed: _toggleFollow, // Panggil fungsi toggle
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF2D2522),
             foregroundColor: Colors.white,
@@ -507,17 +600,6 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
               style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
             ),
           ],
-        ),
-        TextButton(
-          onPressed: () {},
-          child: const Text(
-            'Lihat Semua',
-            style: TextStyle(
-              color: Color(0xFFA23914),
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ),
       ],
     );
