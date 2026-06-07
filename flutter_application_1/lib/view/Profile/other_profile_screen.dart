@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/buyer_product_card.dart';
+import '../../model/book_model.dart';
+import '../product_detail_screen.dart';
 
 class ProfileProductDummy {
   final String title;
@@ -18,6 +21,7 @@ class ProfileProductDummy {
 }
 
 class OtherProfileScreen extends StatefulWidget {
+  final String sellerId;
   final String name;
   final String joinYear;
   final String followers;
@@ -26,10 +30,12 @@ class OtherProfileScreen extends StatefulWidget {
   final int totalTerjual;
   final int totalMembeli;
   final double penilaian;
-  final String profileType; // 'martin_follow_back', 'martin_following', atau 'sabian_empty'
+  final String
+  profileType; // 'martin_follow_back', 'martin_following', atau 'sabian_empty'
 
   const OtherProfileScreen({
     super.key,
+    required this.sellerId,
     required this.name,
     required this.joinYear,
     required this.followers,
@@ -54,32 +60,15 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
     currentType = widget.profileType;
   }
 
-  final List<ProfileProductDummy> activeProducts = [
-    ProfileProductDummy(
-      title: 'Animal Farm',
-      author: 'George Orwell',
-      price: 'Rp. 47.000',
-      rating: '4.8',
-      imageUrl: 'assets/images/animal_farm.jpg',
-    ),
-    ProfileProductDummy(
-      title: 'Pergi',
-      author: 'Tere Liye',
-      price: 'Rp. 58.000',
-      rating: '4.7',
-      imageUrl: 'assets/images/pergi.jpg',
-    ),
-  ];
-
-  final List<ProfileProductDummy> soldOutProducts = [
-    ProfileProductDummy(
-      title: 'Laut Bercerita',
-      author: 'Leila S. Chudori',
-      price: 'Rp. 60.000',
-      rating: '4.7',
-      imageUrl: 'assets/images/laut_bercerita.jpg',
-    ),
-  ];
+  Future<void> _toggleWishlist(String docId, bool currentStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('books').doc(docId).update({
+        'isFavorite': !currentStatus,
+      });
+    } catch (e) {
+      debugPrint('Gagal update wishlist: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,12 +78,20 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black87,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.name,
-          style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: false,
       ),
@@ -116,12 +113,14 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: const CircleAvatar(
                   backgroundColor: Color(0xFFECE6DA),
-                  backgroundImage: AssetImage('assets/images/avatar_placeholder.jpg'),
+                  backgroundImage: AssetImage(
+                    'assets/images/avatar_placeholder.jpg',
+                  ),
                 ),
               ),
             ),
@@ -130,12 +129,20 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
             // 2. NAMA & TAHUN BERGABUNG
             Text(
               widget.name,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Bergabung sejak ${widget.joinYear}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -144,7 +151,12 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildFollowCounter(widget.followers, 'PENGIKUT'),
-                Container(width: 1, height: 20, color: Colors.grey.shade300, margin: const EdgeInsets.symmetric(horizontal: 24)),
+                Container(
+                  width: 1,
+                  height: 20,
+                  color: Colors.grey.shade300,
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                ),
                 _buildFollowCounter(widget.following, 'MENGIKUTI'),
               ],
             ),
@@ -164,9 +176,17 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                         backgroundColor: const Color(0xFFFF7A45),
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
-                      child: const Text('Kirim Pesan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: const Text(
+                        'Kirim Pesan',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -186,7 +206,7 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                     color: Colors.black.withOpacity(0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
-                  )
+                  ),
                 ],
               ),
               child: Stack(
@@ -194,18 +214,35 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                   Positioned(
                     top: 0,
                     left: 0,
-                    child: Text('BIO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.pink.shade200, letterSpacing: 1)),
+                    child: Text(
+                      'BIO',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.pink.shade200,
+                        letterSpacing: 1,
+                      ),
+                    ),
                   ),
                   const Positioned(
                     top: 0,
                     right: 0,
-                    child: Icon(Icons.format_quote_rounded, color: Color(0xFFEFEBE4), size: 36),
+                    child: Icon(
+                      Icons.format_quote_rounded,
+                      color: Color(0xFFEFEBE4),
+                      size: 36,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 20, right: 20),
                     child: Text(
                       widget.bio,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade800, height: 1.5, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade800,
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -216,17 +253,41 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
             // 6. TIGA KARTU KOTAK STATISTIK JUAL/BELI
             Row(
               children: [
-                Expanded(child: _buildGridStatItem(Icons.menu_book_rounded, '${widget.totalTerjual}', 'TERJUAL', const Color(0xFFF5E6E1))),
+                Expanded(
+                  child: _buildGridStatItem(
+                    Icons.menu_book_rounded,
+                    '${widget.totalTerjual}',
+                    'TERJUAL',
+                    const Color(0xFFF5E6E1),
+                  ),
+                ),
                 const SizedBox(width: 10),
-                Expanded(child: _buildGridStatItem(Icons.local_fire_department_rounded, '${widget.totalMembeli}', 'MEMBELI', const Color(0xFFFBECE6))),
+                Expanded(
+                  child: _buildGridStatItem(
+                    Icons.local_fire_department_rounded,
+                    '${widget.totalMembeli}',
+                    'MEMBELI',
+                    const Color(0xFFFBECE6),
+                  ),
+                ),
                 const SizedBox(width: 10),
-                Expanded(child: _buildGridStatItem(Icons.stars_rounded, '${widget.penilaian}', 'PENILAIAN', const Color(0xFFFDF0D5))),
+                Expanded(
+                  child: _buildGridStatItem(
+                    Icons.stars_rounded,
+                    '${widget.penilaian}',
+                    'PENILAIAN',
+                    const Color(0xFFFDF0D5),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 32),
 
             // 7. KONDISIONAL KONTEN PRODUK (Ada Barang vs Kosong)
-            if (currentType == 'sabian_empty') _buildEmptyState() else _buildProductSections(),
+            if (currentType == 'sabian_empty')
+              _buildEmptyState()
+            else
+              _buildRealProductSections(),
           ],
         ),
       ),
@@ -236,9 +297,24 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
   Widget _buildFollowCounter(String count, String label) {
     return Column(
       children: [
-        Text(count, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+        Text(
+          count,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade500, letterSpacing: 0.5)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade500,
+            letterSpacing: 0.5,
+          ),
+        ),
       ],
     );
   }
@@ -255,9 +331,14 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
             backgroundColor: const Color(0xFF2D2522),
             foregroundColor: Colors.white,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
           ),
-          child: const Text('Ikuti Balik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          child: const Text(
+            'Ikuti Balik',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
         ),
       );
     } else if (currentType == 'martin_following') {
@@ -270,9 +351,18 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
           style: OutlinedButton.styleFrom(
             backgroundColor: Colors.white,
             side: BorderSide(color: Colors.grey.shade300, width: 1.5),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
           ),
-          child: Text('Mengikuti', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey.shade700)),
+          child: Text(
+            'Mengikuti',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Colors.grey.shade700,
+            ),
+          ),
         ),
       );
     } else {
@@ -286,15 +376,25 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
             backgroundColor: const Color(0xFF2D2522),
             foregroundColor: Colors.white,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
           ),
-          child: const Text('Ikuti', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          child: const Text(
+            'Ikuti',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
         ),
       );
     }
   }
 
-  Widget _buildGridStatItem(IconData icon, String value, String label, Color bgColor) {
+  Widget _buildGridStatItem(
+    IconData icon,
+    String value,
+    String label,
+    Color bgColor,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
@@ -305,26 +405,85 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
         children: [
           Icon(icon, size: 18, color: const Color(0xFFA23914)),
           const SizedBox(height: 6),
-          Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade600,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildProductSections() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader('Produk ${widget.name}'),
-        const SizedBox(height: 12),
-        _buildProductHorizontalList(activeProducts, false),
-        const SizedBox(height: 24),
-        _buildSectionHeader('Produk Habis'),
-        const SizedBox(height: 12),
-        _buildProductHorizontalList(soldOutProducts, true),
-      ],
+  Widget _buildRealProductSections() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('books')
+          .where(
+            'sellerId',
+            isEqualTo: widget.sellerId,
+          ) // Filter buku milik penjual ini
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFA23914)),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        // Membagi dokumen menjadi Produk Aktif dan Produk Habis secara lokal dari Stream tunggal
+        final allBooks = snapshot.data!.docs;
+
+        // Sesuaikan parameter filter status habis ('isSoldOut' atau 'status') dengan database milikmu
+        final activeBooks = allBooks.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return (data['isSoldOut'] ?? false) == false;
+        }).toList();
+
+        final soldOutBooks = allBooks.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return (data['isSoldOut'] ?? false) == true;
+        }).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader('Produk ${widget.name}'),
+            const SizedBox(height: 12),
+            activeBooks.isEmpty
+                ? const Text(
+                    'Tidak ada produk aktif.',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  )
+                : _buildProductHorizontalList(activeBooks),
+            const SizedBox(height: 24),
+            _buildSectionHeader('Produk Habis'),
+            const SizedBox(height: 12),
+            soldOutBooks.isEmpty
+                ? const Text(
+                    'Tidak ada produk habis.',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  )
+                : _buildProductHorizontalList(soldOutBooks),
+          ],
+        );
+      },
     );
   }
 
@@ -335,84 +494,76 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87)),
-            Text('Items listed in the marketplace', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            Text(
+              'Items listed in the marketplace',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
           ],
         ),
         TextButton(
           onPressed: () {},
-          child: const Text('Lihat Semua', style: TextStyle(color: Color(0xFFA23914), fontSize: 12, fontWeight: FontWeight.bold)),
-        )
+          child: const Text(
+            'Lihat Semua',
+            style: TextStyle(
+              color: Color(0xFFA23914),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildProductHorizontalList(List<ProfileProductDummy> products, bool isSoldOut) {
+  Widget _buildProductHorizontalList(List<QueryDocumentSnapshot> bookDocs) {
     return SizedBox(
-      height: 210,
-      child: ListView.builder(
+      height:
+          250, // Ditinggikan menjadi 250 agar BuyerProductCard tidak terpotong (Layout Error)
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: products.length,
+        itemCount: bookDocs.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
-          final item = products[index];
-          return Container(
-            width: 140,
-            margin: const EdgeInsets.only(right: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      height: 140,
-                      width: 140,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFEBE4),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: ColorFiltered(
-                          colorFilter: isSoldOut 
-                              ? ColorFilter.mode(Colors.black.withOpacity(0.2), BlendMode.dstATop) 
-                              : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
-                          child: const Icon(Icons.book, size: 40, color: Colors.grey),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: Icon(
-                          isSoldOut ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                          size: 14, 
-                          color: isSoldOut ? Colors.red : Colors.grey,
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)),
-                Text('oleh ${item.author}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
-                const SizedBox(height: 2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(item.price, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFA23914))),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
-                        const SizedBox(width: 2),
-                        Text(item.rating, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
-                      ],
-                    )
-                  ],
-                )
-              ],
+          final doc = bookDocs[index];
+          final bookData = doc.data() as Map<String, dynamic>;
+          final bool currentIsFavorite = bookData['isFavorite'] ?? false;
+
+          return SizedBox(
+            width: 150, // Mengamankan batas layout card horizontal
+            child: BuyerProductCard(
+              imageUrl: bookData['image'] ?? 'assets/images/placeholder.jpg',
+              title: bookData['title'] ?? 'Tanpa Judul',
+              author: bookData['author'] ?? 'Anonim',
+              price: 'Rp ${bookData['price'] ?? 0}',
+              rating: bookData['rating'] != null
+                  ? '${bookData['rating']}'
+                  : '0.0',
+              storeName: bookData['storeName'] ?? widget.name,
+              isFavorite: currentIsFavorite,
+              onTap: () {
+                // 🟢 Membuka detail produk baru saat card diklik
+                final clickedBook = BookModel.fromMap(bookData, doc.id);
+                // Sesuaikan 'ProductDetailScreen' jika penamaannya berbeda di projectmu
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ProductDetailScreen(book: clickedBook),
+                  ),
+                );
+              },
+              onFavoriteTap: () async {
+                // 🟢 Berfungsi langsung menyimpan status ke database wishlist
+                await _toggleWishlist(doc.id, currentIsFavorite);
+              },
             ),
           );
         },
@@ -431,8 +582,17 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
             text: TextSpan(
               style: const TextStyle(fontSize: 14, color: Colors.black87),
               children: [
-                TextSpan(text: widget.name, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF7A45))),
-                const TextSpan(text: ' Belum\nMenambahkan Produk Apapun', style: TextStyle(fontWeight: FontWeight.bold)),
+                TextSpan(
+                  text: widget.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF7A45),
+                  ),
+                ),
+                const TextSpan(
+                  text: ' Belum\nMenambahkan Produk Apapun',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
           ),

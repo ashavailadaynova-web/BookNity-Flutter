@@ -30,8 +30,8 @@ class UserModel {
       location: map['location'] ?? '',
       website: map['website'] ?? '',
       username: map['username'] ?? '',
-      birthDate: map['birthDate'] ?? '',    
-      photoUrl: map['photoUrl'] ?? '',  
+      birthDate: map['birthDate'] ?? '',
+      photoUrl: map['photoUrl'] ?? '',
     );
   }
 
@@ -43,9 +43,8 @@ class UserModel {
       'location': location,
       'website': website,
       'username': username,
-'birthDate': birthDate,
-'photoUrl': photoUrl,
-
+      'birthDate': birthDate,
+      'photoUrl': photoUrl,
     };
   }
 }

@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum MessageType { text, offerPending, offerAccepted }
+// Tipe pesan dalam obrolan Booknity
+enum MessageType { text, offerPending, offerAccepted, invoice }
 
 class MessageModel {
-  final String?
-  id; // 🟢 DIUBAH: Dibuat nullable & hapus 'required' agar tidak error saat kirim chat baru
+  final String? id; 
   final String senderId;
   final String message;
   final DateTime timestamp;
@@ -12,14 +12,17 @@ class MessageModel {
   final bool isMe;
   final String time;
 
-  // Field opsional untuk fitur penawaran buku
+  // Field opsional untuk fitur penawaran buku dan invoice konfirmasi pembayaran
   final String? bookTitle;
   final String? author;
   final String? price;
   final String? cover;
+  
+  // 🟢 REVISI: Menambahkan field pendukung status pelacakan pesanan secara urut
+  final String? statusPesanan; 
 
   MessageModel({
-    this.id, // 🟢 Tidak required karena Firestore yang akan meng-generate ID ini otomatis
+    this.id, 
     required this.senderId,
     required this.message,
     required this.timestamp,
@@ -30,6 +33,7 @@ class MessageModel {
     this.author,
     this.price,
     this.cover,
+    this.statusPesanan = "menunggu_konfirmasi", // 🟢 Default awal saat invoice dibuat
   });
 
   // Fungsi untuk konversi data dari Firebase Firestore ke Object Dart (Dipakai di Stream/Get)
@@ -40,25 +44,26 @@ class MessageModel {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
     MessageType msgType = MessageType.text;
-    if (data['type'] == 'offerPending' ||
-        data['type'] == 'MessageType.offerPending')
+    String rawType = data['type'] ?? '';
+
+    if (rawType == 'offerPending' || rawType == 'MessageType.offerPending') {
       msgType = MessageType.offerPending;
-    if (data['type'] == 'offerAccepted' ||
-        data['type'] == 'MessageType.offerAccepted')
+    } else if (rawType == 'offerAccepted' || rawType == 'MessageType.offerAccepted') {
       msgType = MessageType.offerAccepted;
+    } else if (rawType == 'invoice' || rawType == 'MessageType.invoice') {
+      msgType = MessageType.invoice; 
+    }
 
     String sId = data['senderId'] ?? '';
-    DateTime tStamp =
-        (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+    DateTime tStamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
 
-    // Otomatis generate teks waktu desainmu dari timestamp Firebase jika data 'time' di DB kosong
+    // Otomatis generate teks waktu dari timestamp Firebase jika data 'time' di DB kosong
     String minute = tStamp.minute.toString().padLeft(2, '0');
     String period = tStamp.hour >= 12 ? "PM" : "AM";
     int displayHour = tStamp.hour > 12
         ? tStamp.hour - 12
         : (tStamp.hour == 0 ? 12 : tStamp.hour);
-    String formattedTime =
-        "${displayHour.toString().padLeft(2, '0')}:$minute $period";
+    String formattedTime = "${displayHour.toString().padLeft(2, '0')}:$minute $period";
 
     return MessageModel(
       id: doc.id,
@@ -72,6 +77,7 @@ class MessageModel {
       author: data['author'],
       price: data['price'],
       cover: data['cover'],
+      statusPesanan: data['statusPesanan'] ?? 'menunggu_konfirmasi', // 🟢 Ambil data status dari Firestore
     );
   }
 
@@ -81,13 +87,13 @@ class MessageModel {
       'senderId': senderId,
       'message': message,
       'timestamp': Timestamp.fromDate(timestamp),
-      'type': type
-          .name, // Menyimpan dalam bentuk string nama ('text', 'offerPending', 'offerAccepted')
+      'type': type.name, 
       'time': time,
       'bookTitle': bookTitle,
       'author': author,
       'price': price,
       'cover': cover,
+      'statusPesanan': statusPesanan, // 🟢 Ikut di-upload saat membuat invoice baru
     };
   }
 }

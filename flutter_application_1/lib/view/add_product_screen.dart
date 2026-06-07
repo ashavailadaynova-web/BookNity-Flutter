@@ -19,7 +19,7 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen> {
   File? selectedImage;
-  bool _isLoading = false; 
+  bool _isLoading = false;
 
   final ImagePicker _picker = ImagePicker();
   final TextEditingController titleController = TextEditingController();
@@ -29,7 +29,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final TextEditingController priceController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   // 🟢 Tambahan Controller Baru untuk Deskripsi Fisik
-  final TextEditingController physicalDescriptionController = TextEditingController();
+  final TextEditingController physicalDescriptionController =
+      TextEditingController();
 
   String selectedCategory = "Fiksi";
   String selectedCondition = "Like New";
@@ -90,13 +91,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
         description: descriptionController.text.trim(),
         // 🟢 Menyertakan data Deskripsi Fisik ke dalam model data
         physicalDescription: physicalDescriptionController.text.trim(),
-        rating: 0.0, // 🟢 Menggunakan 0.0 (double) agar sesuai dengan struktur model bertipe pecahan
+        rating:
+            0.0, // 🟢 Menggunakan 0.0 (double) agar sesuai dengan struktur model bertipe pecahan
         storeName: "Booknity Store",
         year: yearController.text.trim(),
         isbn: isbnController.text.trim(),
         condition: selectedCondition,
-        sellerId:
-         FirebaseAuth.instance.currentUser!.uid,
+        sellerId: FirebaseAuth.instance.currentUser!.uid,
       );
 
       // Mengirim objek buku baru ke Firestore
@@ -109,9 +110,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
         MaterialPageRoute(builder: (_) => const SuccessAddProductScreen()),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload gagal: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload gagal: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -148,7 +149,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             SizedBox(
               width: double.infinity,
               child: GestureDetector(
-                onTap: _isLoading ? null : pickImage, 
+                onTap: _isLoading ? null : pickImage,
                 child: _imageBox(
                   width: double.infinity,
                   height: 220,
@@ -324,7 +325,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : uploadBook,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8F4F17), 
+                  backgroundColor: const Color(0xFF8F4F17),
                   disabledBackgroundColor: const Color(0xffD9D9D9),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -454,48 +455,48 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
             )
           : large
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 58,
-                      height: 58,
-                      decoration: const BoxDecoration(
-                        color: Color(0xffB84A14),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.add_a_photo_outlined,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Add Cover Photo",
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xff2B2522),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Recommended: Bright, natural light",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                )
-              : const Center(
-                  child: Icon(
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: const BoxDecoration(
+                    color: Color(0xffB84A14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
                     Icons.add_a_photo_outlined,
-                    size: 28,
-                    color: Color(0xffD5C8BF),
+                    color: Colors.white,
                   ),
                 ),
+                const SizedBox(height: 16),
+                Text(
+                  "Add Cover Photo",
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xff2B2522),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Recommended: Bright, natural light",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            )
+          : const Center(
+              child: Icon(
+                Icons.add_a_photo_outlined,
+                size: 28,
+                color: Color(0xffD5C8BF),
+              ),
+            ),
     );
   }
 }

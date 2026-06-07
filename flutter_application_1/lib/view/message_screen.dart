@@ -1,87 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_room_screen.dart';
 
-class MessageScreen extends StatelessWidget {
+class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
 
   @override
+  State<MessageScreen> createState() => _MessageScreenState();
+}
+
+class _MessageScreenState extends State<MessageScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return "";
+    final DateTime dateTime = timestamp.toDate();
+    final DateTime now = DateTime.now();
+    final Duration difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return "Baru saja";
+    } else if (difference.inHours < 1) {
+      return "${difference.inMinutes}m lalu";
+    } else if (difference.inDays < 1) {
+      return "${difference.inHours}j lalu";
+    } else {
+      return "${dateTime.day}/${dateTime.month}";
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // 🟢 PERBAIKAN: Menambahkan properti sellerId ke data dummy agar sinkron dengan ChatRoomScreen
-    final List<ChatModel> chats = [
-      ChatModel(
-        sellerId: "Sabian Adam",
-        name: "Sabian Adam",
-        message: "I'll take that deh kak",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=1",
-        unread: true,
-      ),
-      ChatModel(
-        sellerId: "Toko Buku Aceng",
-        name: "Toko Buku Aceng",
-        message: "Baik kak, terima kasih. Bukunya...",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=2",
-        unread: true,
-      ),
-      ChatModel(
-        sellerId: "Vintage Book Find",
-        name: "Vintage Book Find",
-        message: "Thanks for the recommendation...",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=3",
-        unread: false,
-      ),
-      ChatModel(
-        sellerId: "Helena",
-        name: "Helena",
-        message: "Yah, yaudah deh kak next time aja",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=4",
-        unread: false,
-      ),
-      ChatModel(
-        sellerId: "Juno Malik",
-        name: "Juno Malik",
-        message: "Engga jadi deh, kakaknya galak",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=5",
-        unread: false,
-      ),
-      ChatModel(
-        sellerId: "Humpty Hamster",
-        name: "Humpty Hamster",
-        message: "Okay kak Terimakasih",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=6",
-        unread: true,
-      ),
-      ChatModel(
-        sellerId: "Salma",
-        name: "Salma",
-        message: "Thanks a lot kak",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=7",
-        unread: false,
-      ),
-      ChatModel(
-        sellerId: "Calista Jajan Buku",
-        name: "Calista Jajan Buku",
-        message: "MAKACI KAK",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=8",
-        unread: false,
-      ),
-      ChatModel(
-        sellerId: "Baskara Keenan",
-        name: "Baskara Keenan",
-        message: "Finally my istri pulang, ditunggu barangnya",
-        time: "2m ago",
-        image: "https://i.pravatar.cc/150?img=9",
-        unread: false,
-      ),
-    ];
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
 
     return Scaffold(
       backgroundColor: const Color(0xffF8F6F4),
@@ -90,20 +49,15 @@ class MessageScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 16),
 
+            // Top Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Color(0xff4A342E),
-                    ),
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, color: Color(0xff4A342E)),
                   ),
-
                   Expanded(
                     child: Center(
                       child: Text(
@@ -116,7 +70,6 @@ class MessageScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 48),
                 ],
               ),
@@ -124,6 +77,7 @@ class MessageScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            // Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -131,33 +85,21 @@ class MessageScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xff4A241B),
                   borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: TextField(
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white,
-                    fontSize: 15,
-                  ),
+                  controller: _searchController,
+                  style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 15),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: Colors.white,
-                      size: 22,
-                    ),
+                    prefixIcon: const Icon(Icons.search, color: Colors.white, size: 22),
                     hintText: "Telusuri obrolan . . .",
-                    hintStyle: GoogleFonts.plusJakartaSans(
-                      color: Colors.white70,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    hintStyle: GoogleFonts.plusJakartaSans(color: Colors.white70, fontSize: 15),
                   ),
                 ),
               ),
@@ -165,81 +107,150 @@ class MessageScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            // List Chat Utama
             Expanded(
-              child: ListView.separated(
-                itemCount: chats.length,
-                separatorBuilder: (_, __) =>
-                    Divider(height: 1, color: Colors.grey.shade200),
-                itemBuilder: (context, index) {
-                  final chat = chats[index];
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('chat_rooms')
+                    .where('participants', arrayContains: currentUserId)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: Color(0xff4A342E)));
+                  }
 
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    onTap: () {
-                      // 🟢 PERBAIKAN UTAMA: Mengubah parameter roomId menjadi sellerId sesuai konstruktor ChatRoomScreen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ChatRoomScreen(sellerId: chat.sellerId),
-                        ),
+                  // 🟢 JIKA KOSONG DI SINI, MAKA DATABASENYA MEMANG BELUM MENYIMPAN FIELD 'participants'
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Belum ada obrolan masuk.",
+                            style: GoogleFonts.plusJakartaSans(color: Colors.grey, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final roomDocs = snapshot.data!.docs;
+
+                  return ListView.separated(
+                    itemCount: roomDocs.length,
+                    separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade200),
+                    itemBuilder: (context, index) {
+                      final data = roomDocs[index].data() as Map<String, dynamic>;
+                      final List<dynamic> participants = data['participants'] ?? [];
+                      
+                      // Cari ID lawan bicara secara dinamis
+                      final String targetId = participants.firstWhere(
+                        (id) => id != currentUserId,
+                        orElse: () => '',
                       );
-                    },
-                    leading: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 28,
-                          backgroundImage: NetworkImage(chat.image),
-                        ),
-                        if (chat.unread)
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: const Color(0xffC64A0F),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 2,
+
+                      final String lastMessage = data['lastMessage'] ?? "Mengirim lampiran...";
+                      final String chatTime = _formatTimestamp(data['lastTime'] as Timestamp?);
+                      final bool isUnread = data['unread'] ?? false;
+
+                      return FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance.collection('users').doc(targetId).get(),
+                        builder: (context, userSnapshot) {
+                          String roomTitle = "Pengguna Booknity";
+                          String profileImg = "";
+
+                          // SINKRONISASI DATA PROFIL USER JIKA ADA
+                          if (userSnapshot.hasData && userSnapshot.data!.exists) {
+                            final userData = userSnapshot.data!.data() as Map<String, dynamic>;
+                            roomTitle = userData['name'] ?? userData['username'] ?? "Pengguna Booknity";
+                            profileImg = userData['photoUrl'] ?? userData['profileImage'] ?? userData['image'] ?? "";
+                          }
+
+                          // Filter Search Bar
+                          if (_searchQuery.isNotEmpty && !roomTitle.toLowerCase().contains(_searchQuery)) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatRoomScreen(sellerId: targetId),
+                                ),
+                              );
+                            },
+                            leading: Stack(
+                              children: [
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xffEFECE1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(28),
+                                    child: profileImg.isNotEmpty
+                                        ? Image.network(
+                                            profileImg,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => 
+                                                const Icon(Icons.person, color: Color(0xff4A342E), size: 28),
+                                          )
+                                        : const Icon(Icons.person, color: Color(0xff4A342E), size: 28),
+                                  ),
+                                ),
+                                if (isUnread)
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xffC64A0F),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            title: Text(
+                              roomTitle,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: const Color(0xff3B2824),
+                              ),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                lastMessage,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  color: const Color(0xff777777),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    title: Text(
-                      chat.name,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: const Color(0xff3B2824),
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        chat.message,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          color: const Color(0xff777777),
-                        ),
-                      ),
-                    ),
-                    trailing: Text(
-                      chat.time,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: const Color(0xff8D8D8D),
-                      ),
-                    ),
+                            trailing: Text(
+                              chatTime,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                color: const Color(0xff8D8D8D),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
@@ -249,23 +260,4 @@ class MessageScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class ChatModel {
-  // 🟢 PERBAIKAN: Menambahkan parameter properti sellerId ke dalam objek model chat
-  final String sellerId;
-  final String name;
-  final String message;
-  final String time;
-  final String image;
-  final bool unread;
-
-  ChatModel({
-    required this.sellerId,
-    required this.name,
-    required this.message,
-    required this.time,
-    required this.image,
-    required this.unread,
-  });
 }
