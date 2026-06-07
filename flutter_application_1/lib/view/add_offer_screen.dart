@@ -244,12 +244,12 @@ class _OfferScreenState extends State<OfferScreen> {
                     const SizedBox(width: 48),
                   ],
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 12),
 
                 // COVER BUKU (Dinamis)
                 Container(
-                  width: 235,
-                  height: 345,
+                  width: 120,
+                  height: 170,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
@@ -265,14 +265,14 @@ class _OfferScreenState extends State<OfferScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 12),
 
                 // JUDUL BUKU (Dinamis)
                 Text(
                   widget.title,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 30,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xff2D211E),
                   ),
@@ -283,11 +283,11 @@ class _OfferScreenState extends State<OfferScreen> {
                 Text(
                   "oleh ${widget.author}",
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
+                    fontSize: 13,
                     color: const Color(0xff4D3A35),
                   ),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 10),
 
                 Text(
                   "Harga",
@@ -302,12 +302,12 @@ class _OfferScreenState extends State<OfferScreen> {
                 Text(
                   "Rp ${widget.originalPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}",
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 26,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xff2D211E),
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 20),
 
                 // LABEL INPUT
                 Align(
@@ -324,7 +324,7 @@ class _OfferScreenState extends State<OfferScreen> {
 
                 // INPUT PENAWARAN
                 Container(
-                  height: 64,
+                  height: 56,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(14),
@@ -415,7 +415,7 @@ class _OfferScreenState extends State<OfferScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 42),
+                const SizedBox(height: 24),
 
                 // BUTTON (Akan terkunci jika input tidak valid)
                 SizedBox(
@@ -449,7 +449,7 @@ class _OfferScreenState extends State<OfferScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 18),
               ],
             ),
           ),
