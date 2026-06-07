@@ -272,7 +272,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Tombol Sign In (Manual Register)
+                  // Tombol Sign In (Sesuai teks di tombol gambar kamu)
                   SizedBox(
                     width: double.infinity,
                     height: 55,
@@ -339,7 +339,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        'Sign In',
+                        'Sign In', // Sesuai desain Figma kamu
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -379,61 +379,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Tombol Media Sosial (Google & Lainnya)
+                  // Tombol Media Sosial
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 🟢 TOMBOL GOOGLE REGISTER AKTIF
-                      GestureDetector(
-                        onTap: () async {
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (context) => const Center(
-                              child: CircularProgressIndicator(
-                                color: Color(0xFF8F4F17),
-                              ),
-                            ),
-                          );
-
-                          final authViewModel = context.read<AuthViewModel>();
-                          final success = await authViewModel.loginWithGoogle();
-
-                          if (!mounted) return;
-                          Navigator.pop(context);
-
-                          if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Registrasi via Google Berhasil!',
-                                ),
-                              ),
-                            );
-
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const MainScreen(),
-                              ),
-                              (route) => false,
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Gagal melakukan Registrasi dengan Google',
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                        child: Image.asset(
-                          'assets/google.png',
-                          width: 32,
-                          height: 32,
-                        ),
+                      const Icon(
+                        Icons.facebook,
+                        size: 32,
+                        color: Color(0xFF1877F2),
                       ),
+                      const SizedBox(width: 25),
+                      const Icon(
+                        Icons.g_mobiledata,
+                        size: 45,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 25),
+                      const Icon(Icons.apple, size: 32, color: Colors.black),
                     ],
                   ),
                   const SizedBox(height: 40),
@@ -481,63 +443,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // Reusable Input Field
-  Widget _buildInputField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    bool isPassword = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-          child: Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF42210B),
-            ),
+  // Reusable Input Field
+Widget _buildInputField({
+  required String label,
+  required String hint,
+  required TextEditingController controller,
+  bool isPassword = false,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(
+          left: 4.0,
+          bottom: 8.0,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF42210B),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5EFE6).withOpacity(0.6),
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword ? _isPasswordHidden : false,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: GoogleFonts.montserrat(
-                color: const Color(0xFFB3A699),
-                fontSize: 14,
+      ),
+
+      Container(
+        decoration: BoxDecoration(
+          color: const Color(
+            0xFFF5EFE6,
+          ).withOpacity(0.6),
+          borderRadius:
+              BorderRadius.circular(30),
+        ),
+
+        child: TextField(
+          controller: controller,
+
+          obscureText: isPassword
+              ? _isPasswordHidden
+              : false,
+
+          decoration: InputDecoration(
+            hintText: hint,
+
+            hintStyle:
+                GoogleFonts.montserrat(
+              color: const Color(
+                0xFFB3A699,
               ),
-              suffixIcon: isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        _isPasswordHidden
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordHidden = !_isPasswordHidden;
-                        });
-                      },
-                    )
-                  : null,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 16,
-              ),
-              border: InputBorder.none,
+              fontSize: 14,
             ),
+
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _isPasswordHidden
+                          ? Icons
+                              .visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordHidden =
+                            !_isPasswordHidden;
+                      });
+                    },
+                  )
+                : null,
+
+            contentPadding:
+                const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 16,
+            ),
+
+            border: InputBorder.none,
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }

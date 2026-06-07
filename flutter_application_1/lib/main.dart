@@ -1,9 +1,13 @@
 import 'dart:async'; // Ditambahkan agar objek 'Timer' tidak error lagi
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
-// --- BAGIAN IMPORT ONBOARDING & LOGIN (SUDAH DIPERBAIKI) ---
+// --- BAGIAN IMPORT UTAMA & LAYOUT ---
+import 'package:flutter_application_1/main_screen.dart';
+
+// --- BAGIAN IMPORT ONBOARDING & LOGIN ---
 import 'package:flutter_application_1/view/Login%20Register/splash_screen.dart';
 import 'package:flutter_application_1/view/Login%20Register/onboarding_splash.dart';
 import 'package:flutter_application_1/view/Login%20Register/onboarding2_splash.dart';
@@ -22,8 +26,8 @@ import 'view/product_detail_screen.dart';
 import 'viewmodel/book_viewmodel.dart';
 import 'viewmodel/pesanan_view_model.dart';
 import 'viewmodel/auth_viewmodel.dart';
-import 'viewmodel/address_viewmodel.dart';
 import 'viewmodel/user_viewmodel.dart';
+import 'viewmodel/chat_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,16 +37,13 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => PesananViewModel()),
-
         ChangeNotifierProvider(create: (_) => BookViewModel()),
-
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
 
-      ChangeNotifierProvider(
-      create: (_) => UserViewModel(),
-      ),
+        ChangeNotifierProvider(create: (_) => UserViewModel()),
 
-    ],
+        ListenableProvider<ChatViewModel>(create: (_) => ChatViewModel()),
+      ],
 
       child: const MyApp(),
     ),
@@ -58,6 +59,8 @@ class MyApp extends StatelessWidget {
       title: 'Booknity',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
+
+      // 🟢 KODE YANG DIUBAH: Langsung arahkan ke SplashScreen agar tidak langsung loncat ke Beranda
       home: const SplashScreen(),
 
       // Navigasi penamaan rute (routes) agar pemanggilan halaman kelompok lebih rapi
@@ -77,9 +80,7 @@ class MyApp extends StatelessWidget {
 
 // Container Utama untuk menggeser halaman Onboarding secara otomatis/manual
 class MainOnboardingContainer extends StatefulWidget {
-  const MainOnboardingContainer({
-    super.key,
-  }); // 👈 REVISI: Menggunakan format super.key yang modern
+  const MainOnboardingContainer({super.key});
 
   @override
   State<MainOnboardingContainer> createState() =>
@@ -109,7 +110,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
         }
       } else {
         // Jika sudah di halaman onboarding terakhir (ke-3), matikan timer
-        // dan langsung pindah ke halaman RegisterScreen secara otomatis
+        // dan langsung pindah ke halaman LoginScreen secara otomatis
         _onboardingTimer?.cancel();
         Navigator.of(context).pushReplacementNamed('/login');
       }
@@ -135,8 +136,8 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
         },
         children: [
           OnboardingScreen(), // Halaman 1
-          OnboardingScreen2(), // Halaman 2 (sementara)
-          OnboardingScreen3(), // Halaman 3 (sementara)
+          OnboardingScreen2(), // Halaman 2
+          OnboardingScreen3(), // Halaman 3
         ],
       ),
     );

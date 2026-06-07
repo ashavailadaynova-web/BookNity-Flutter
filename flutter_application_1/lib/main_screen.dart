@@ -2,35 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'view/Pesanan/pesanan_screen.dart';
 import 'view/Beranda/home_screen.dart';
-import 'view/Notifikasi/notifikasi_screen.dart';
 import 'view/Profile/profile_screen.dart';
+
+// 🔥 SESUAI STRUKTUR PROYEKMU: Mengimport halaman tambah produk/buku
 import 'view/add_product_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final int selectedIndex;
 
-  const MainScreen({
-    super.key,
-    this.selectedIndex = 0,
-  });
+  const MainScreen({super.key, this.selectedIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  late int _currentIndex;
+  int _currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.selectedIndex;
-  }
-
+  // List halaman utama navigasi bawah
   final List<Widget> _screens = [
     const HomeScreen(),
     const PesananScreen(),
-    const NotificationScreen(),
+    const Center(child: Text("Halaman Notifikasi (Segera Hadir)")),
     const ProfileScreen(),
   ];
 
@@ -40,28 +33,23 @@ class _MainScreenState extends State<MainScreen> {
       extendBody: true,
       body: IndexedStack(index: _currentIndex, children: _screens),
 
-      // Tombol Tambah (+) di tengah
+      // Floating Action Button (FAB) tombol tambah (+) di tengah bawah
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          // 🚀 SEKARANG SUDAH AKTIF: Meluncur ke halaman Add Product Screen
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const AddProductScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const AddProductScreen()),
           );
         },
         backgroundColor: const Color(0xFFB13D14),
         elevation: 4,
         shape: const CircleBorder(),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 32,
-        ),
+        child: const Icon(Icons.add, color: Colors.white, size: 32),
       ),
 
-      // Bottom Navigation Bar
+      // Perbaikan Struktur Bottom Navigation Bar
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         elevation: 8,
@@ -81,9 +69,19 @@ class _MainScreenState extends State<MainScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Expanded(child: _buildNavItem(Icons.home_filled, "HOME", 0)),
-              Expanded(child: _buildNavItem(Icons.menu_book_rounded, "MY ORDER", 1)),
-              const SizedBox(width: 48), // Ruang untuk FAB
-              Expanded(child: _buildNavItem(Icons.notifications_outlined, "NOTIFIKASI", 2)),
+              Expanded(
+                child: _buildNavItem(Icons.menu_book_rounded, "MY ORDER", 1),
+              ),
+              const SizedBox(
+                width: 48,
+              ), // Jeda ruang kosong untuk FAB (+) di tengah
+              Expanded(
+                child: _buildNavItem(
+                  Icons.notifications_outlined,
+                  "NOTIFIKASI",
+                  2,
+                ),
+              ),
               Expanded(child: _buildNavItem(Icons.person, "PROFIL", 3)),
             ],
           ),

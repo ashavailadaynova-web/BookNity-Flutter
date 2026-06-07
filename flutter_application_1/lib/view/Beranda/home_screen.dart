@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'category_screen.dart';
 import '../message_screen.dart';
 import 'wishlist_screen.dart';
 import '../search_screen.dart';
-
 import '../../widgets/buyer_product_card.dart';
+import '../../model/book_model.dart';
+import '../product_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,15 +20,48 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _bannerController = PageController();
   int _currentBanner = 0;
 
+  // 🟢 HELPER UTK FORMAT RUPIAH
+  String formatRupiah(String hargaRaw) {
+    if (hargaRaw.isEmpty) return 'Rp 0';
+    // Menghapus karakter non-angka jika ada
+    String cleanHarga = hargaRaw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanHarga.isEmpty) return 'Rp 0';
+
+    final value = int.tryParse(cleanHarga) ?? 0;
+    // Format manual ribuan tanpa package tambahan
+    String str = value.toString();
+    String result = '';
+    int count = 0;
+
+    for (int i = str.length - 1; i >= 0; i--) {
+      result = str[i] + result;
+      count++;
+      if (count == 3 && i != 0) {
+        result = '.$result';
+        count = 0;
+      }
+    }
+    return 'Rp $result';
+  }
+
+  // 🟢 FUNGSIONALITAS TOGGLE WISHLIST DI FIRESTORE
+  Future<void> toggleWishlist(String docId, bool currentStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('books').doc(docId).update({
+        'isFavorite': !currentStatus,
+      });
+    } catch (e) {
+      debugPrint('Gagal update wishlist: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(
-            bottom: 100, // Menghindari konten tertutup oleh navbar utama
-          ),
+          padding: const EdgeInsets.only(bottom: 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -71,16 +106,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Spacer(),
           IconButton(
-            icon: const Icon(
-              Icons.favorite_border,
-              color: Color(0xFF4A2E2B),
-            ),
+            icon: const Icon(Icons.favorite_border, color: Color(0xFF4A2E2B)),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const WishlistScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const WishlistScreen()),
               );
             },
           ),
@@ -92,9 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const MessageScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const MessageScreen()),
               );
             },
           ),
@@ -105,61 +133,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 2. Search Bar
   Widget _buildSearchBar() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                );
+              },
+              child: Container(
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8EE),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                alignment: Alignment.centerLeft,
+                child: const Text(
+                  'Search books, authors, ISBN',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const SearchScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
               );
             },
-            child: Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8EE),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              alignment: Alignment.centerLeft,
-              child: const Text(
-                'Search books, authors, ISBN',
-                style: TextStyle(
-                  color: Colors.grey,
-                ),
-              ),
+            child: const CircleAvatar(
+              backgroundColor: Color(0xFF5C3826),
+              child: Icon(Icons.search, color: Colors.white),
             ),
           ),
-        ),
-
-        const SizedBox(width: 8),
-
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const SearchScreen(),
-              ),
-            );
-          },
-          child: const CircleAvatar(
-            backgroundColor: Color(0xFF5C3826),
-            child: Icon(
-              Icons.search,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   // 3. Banner Promo Slider
   Widget _buildBannerSlider() {
@@ -240,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 4. Kategori Buku (SEKARANG SEMUANYA SUDAH BISA DIKLIK)
+  // 4. Kategori Buku
   Widget _buildKategoriBuku() {
     List<Map<String, dynamic>> kategori = [
       {
@@ -279,24 +296,6 @@ class _HomeScreenState extends State<HomeScreen> {
         'color': const Color(0xFFE3F2FD),
         'iconColor': const Color(0xFF1565C0),
       },
-      {
-        'nama': 'MASAKAN',
-        'icon': Icons.restaurant,
-        'color': const Color(0xFFFCE4EC),
-        'iconColor': const Color(0xFFD81B60),
-      },
-      {
-        'nama': 'SELF-HELP',
-        'icon': Icons.self_improvement,
-        'color': const Color(0xFFF3E5F5),
-        'iconColor': const Color(0xFF8E24AA),
-      },
-      {
-        'nama': 'ANAK-ANAK',
-        'icon': Icons.child_care,
-        'color': const Color(0xFFFFFDE7),
-        'iconColor': const Color(0xFFF57F17),
-      },
     ];
 
     return Column(
@@ -310,16 +309,14 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: kategori.length,
             itemBuilder: (context, index) {
               return GestureDetector(
-               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CategoryScreen(
-                      category: kategori[index]['nama'],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          CategoryScreen(category: kategori[index]['nama']),
                     ),
-                  ),
-                );
-
+                  );
                 },
                 child: Padding(
                   padding: const EdgeInsets.only(right: 16.0),
@@ -361,29 +358,29 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildSectionTitle('Sedang Populer'),
         SizedBox(
           height: 280,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _buildCardBukuHorizontal(
-                'Laut Bercerita',
-                'Leila S. Chudori',
-                'Rp. 60.000',
-                '4.7',
-                true,
-                'assets/laut_bercerita.png',
-                'Toko Buku Aceng',
-              ),
-              _buildCardBukuHorizontal(
-                'Cantik Itu Luka',
-                'Eka Kurniawan',
-                'Rp. 58.000',
-                '4.8',
-                false,
-                'assets/cantik_itu_luka.png',
-                'Buku Bekas Ayu',
-              ),
-            ],
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('books').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(
+                  child: Text('Tidak ada buku populer saat ini'),
+                );
+              }
+
+              final bookDocs = snapshot.data!.docs;
+
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: bookDocs.length,
+                itemBuilder: (context, index) {
+                  return _buildCardBukuHorizontal(bookDocs[index]);
+                },
+              );
+            },
           ),
         ),
       ],
@@ -410,7 +407,6 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: tabs.length,
             itemBuilder: (context, index) {
               bool isSelected = _selectedTab == index;
-
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -450,46 +446,33 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDaftarBukuRekomendasi() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            _buildCardBukuVertikal(
-              'The Midnight Library',
-              'Matt Haig',
-              'Rp. 76.000',
-              '4.7',
-              'Serba Ada',
-              'assets/midnight_library.png',
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('books').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Belum ada rekomendasi buku'));
+          }
+
+          final bookDocs = snapshot.data!.docs;
+
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.55,
             ),
-            _buildCardBukuVertikal(
-              'Hukum Perdata Internasional',
-              'Dr. Ronald Saija',
-              'Rp. 58.000',
-              '4.5',
-              'Buku Surabaya',
-              'assets/hukum_perdata.png',
-            ),
-            _buildCardBukuVertikal(
-              'Coding Untuk PAUD',
-              'Ria Hayyu',
-              'Rp. 29.900',
-              '4.7',
-              'Toko Buku Aceng',
-              'assets/coding_paud.png',
-            ),
-            _buildCardBukuVertikal(
-              'Project Hail Mary',
-              'Andy Weir',
-              'Rp. 58.000',
-              '4.7',
-              'Rumahnya Buku',
-              'assets/hail_mary.png',
-            ),
-          ],
-        ),
+            itemCount: bookDocs.length,
+            itemBuilder: (context, index) {
+              return _buildCardBukuVertikal(bookDocs[index]);
+            },
+          );
+        },
       ),
     );
   }
@@ -523,77 +506,56 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Helper Card untuk Bagian Atas (Sedang Populer)
-  Widget _buildCardBukuHorizontal(
-    String judul,
-    String penulis,
-    String harga,
-    String rating,
-    bool isFavorite,
-    String pathGambar,
-    String namaToko,
-  ) {
+  Widget _buildCardBukuHorizontal(DocumentSnapshot doc) {
+    // 🟢 PENGAMAN: Cek apakah data di Firestore kosong/null
+    if (doc.data() == null) {
+      return const SizedBox.shrink(); // Hilangkan card jika datanya kosong
+    }
+
+    final bookData = doc.data() as Map<String, dynamic>;
     return Container(
       width: 140,
       margin: const EdgeInsets.only(right: 16),
-      child: _buildKontenCard(
-        judul,
-        penulis,
-        harga,
-        rating,
-        isFavorite,
-        pathGambar,
-        namaToko,
-      ),
+      child: _buildKontenCard(doc.id, bookData),
     );
   }
 
   // Helper Card untuk Bagian Bawah (Rekomendasi Untukmu)
-  Widget _buildCardBukuVertikal(
-    String judul,
-    String penulis,
-    String harga,
-    String rating,
-    String namaToko,
-    String pathGambar,
-  ) {
-    return SizedBox(
-      width: 140,
-      child: _buildKontenCard(
-        judul,
-        penulis,
-        harga,
-        rating,
-        false,
-        pathGambar,
-        namaToko,
-      ),
-    );
+  Widget _buildCardBukuVertikal(DocumentSnapshot doc) {
+    // 🟢 PENGAMAN: Cek apakah data di Firestore kosong/null
+    if (doc.data() == null) {
+      return const SizedBox.shrink(); // Hilangkan card jika datanya kosong
+    }
+
+    final bookData = doc.data() as Map<String, dynamic>;
+    return _buildKontenCard(doc.id, bookData);
   }
 
   // Blueprint Utama penghubung ke BuyerProductCard widget
-  Widget _buildKontenCard(
-    String judul,
-    String penulis,
-    String harga,
-    String rating,
-    bool isFavorite,
-    String pathGambar,
-    String namaToko,
-  ) {
+  Widget _buildKontenCard(String docId, Map<String, dynamic> mapData) {
+    // 🟢 Konversi langsung map dari Firestore menjadi objek BookModel yang utuh
+    final BookModel dataBuku = BookModel.fromMap(mapData, docId);
+
     return BuyerProductCard(
-      imageUrl: pathGambar,
-      title: judul,
-      author: penulis,
-      price: harga,
-      rating: rating,
-      storeName: namaToko,
-      isFavorite: isFavorite,
+      imageUrl: dataBuku.image,
+      title: dataBuku.title,
+      author: dataBuku.author,
+      price: formatRupiah(dataBuku.price), // Format ke Rupiah untuk tampilan UI
+      rating: dataBuku.rating.toString(),
+      storeName: dataBuku.storeName,
+      isFavorite: dataBuku.isFavorite,
       onTap: () {
-        // Navigasi ke halaman detail produk saat kartu ditekan
-        Navigator.pushNamed(context, '/product_detail');
+        // 🟢 PINDAH KE HALAMAN DETAIL SAMBIL MEMBAWA DATA BUKU YANG SUDAH LENGKAP
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductDetailScreen(book: dataBuku),
+          ),
+        );
       },
       onFavoriteTap: () {
-        // Logika ketika tombol Love ditekan (misal tambah ke wishlist)
+        // EKSEKUSI TOGGLE WISHLIST REAL-TIME KE FIRESTORE
+        toggleWishlist(docId, dataBuku.isFavorite);
       },
     );
   }
@@ -603,4 +565,4 @@ class _HomeScreenState extends State<HomeScreen> {
     _bannerController.dispose();
     super.dispose();
   }
-} // 👈 Ini adalah tanda kurung kurawal paling akhir di file kamu
+}

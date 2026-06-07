@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../viewmodel/auth_viewmodel.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,8 +18,11 @@ class _SplashScreenState extends State<SplashScreen> {
     _startSplashScreen();
   }
 
-  // 🟢 LOGIKA PENENTU ARAH HALAMAN
+  // Logika penentu arah halaman
   Future<void> _startSplashScreen() async {
+    // 🟢 REVISI 1: Tanda komentar dihapus agar Firebase menghapus sesi login lama kamu secara paksa
+    await FirebaseAuth.instance.signOut();
+
     // Jalankan splash screen selama 3 detik agar estetik logo terlihat
     await Future.delayed(const Duration(seconds: 3));
 
@@ -30,13 +34,18 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
+    // 🟢 REVISI 2: Kondisi dipaksa langsung masuk ke Onboarding Container untuk masa testing alur login
+    Navigator.of(context).pushReplacementNamed('/onboarding_container');
+
+    /* 🟡 Bagian ini dikomentari dulu agar tidak menembak beranda secara otomatis
     if (isLoggedIn) {
-      // 🔵 JIKA SUDAH LOGIN: Langsung tembak ke Halaman Utama Kelompok
+      // Jika sudah login: Langsung tembak ke Halaman Utama Kelompok
       Navigator.of(context).pushReplacementNamed('/main');
     } else {
-      // 🔴 JIKA BELUM LOGIN / BARU INSTALL: Arahkan ke Onboarding Container
+      // Jika belum login / baru install: Arahkan ke Onboarding Container
       Navigator.of(context).pushReplacementNamed('/onboarding_container');
     }
+    */
   }
 
   @override
