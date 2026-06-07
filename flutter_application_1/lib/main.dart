@@ -26,6 +26,7 @@ import 'view/product_detail_screen.dart';
 import 'viewmodel/book_viewmodel.dart';
 import 'viewmodel/pesanan_view_model.dart';
 import 'viewmodel/auth_viewmodel.dart';
+import 'viewmodel/address_viewmodel.dart';
 import 'viewmodel/user_viewmodel.dart';
 import 'viewmodel/chat_viewmodel.dart';
 
@@ -39,7 +40,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PesananViewModel()),
         ChangeNotifierProvider(create: (_) => BookViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
-
+        ChangeNotifierProvider(create: (_) => AddressViewModel()),
         ChangeNotifierProvider(create: (_) => UserViewModel()),
 
         ListenableProvider<ChatViewModel>(create: (_) => ChatViewModel()),

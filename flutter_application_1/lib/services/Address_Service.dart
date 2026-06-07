@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../model/address_model.dart';
 
 class AddressService {
@@ -20,7 +19,6 @@ class AddressService {
   Future<List<AddressModel>> getAddresses(
     String uid,
   ) async {
-
     final snapshot =
         await _firestore
             .collection('users')
@@ -30,12 +28,25 @@ class AddressService {
 
     return snapshot.docs
         .map(
-          (doc) =>
-              AddressModel.fromMap(
+          (doc) => AddressModel.fromMap(
             doc.data(),
             doc.id,
           ),
         )
         .toList();
+  }
+
+  // TAMBAHKAN INI
+  Future<void> deleteAddress(
+    String uid,
+    String addressId,
+  ) async {
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('addresses')
+        .doc(addressId)
+        .delete();
+
   }
 }

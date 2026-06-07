@@ -11,9 +11,11 @@ import '../add_product_screen.dart';
 import 'help_center_screen.dart';
 import 'settings_screen.dart';
 import '../../viewmodel/user_viewmodel.dart';
+import '../Profile/edit_product_screen.dart';
 
 // IMPORT WIDGET PRODUCT CARD YANG BARU SAJA DIPISAH:
 import '../../widgets/product_card.dart'; // Sesuaikan lokasi foldernya!
+import '../Beranda/wishlist_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,6 +23,7 @@ class ProfileScreen extends StatefulWidget {
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
+
 
 class _ProfileScreenState extends State<ProfileScreen> {
   @override
@@ -246,18 +249,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: Column(
                         children: [
-                          _buildMenuItem(
-                            icon: Icons.favorite_rounded,
-                            iconColor: const Color(0xFFFF7043),
-                            title: "Wishlist Saya",
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Membuka Wishlist Saya...'),
-                                ),
-                              );
-                            },
-                          ),
+                         _buildMenuItem(
+                          icon: Icons.favorite_rounded,
+                          iconColor: const Color(0xFFFF7043),
+                          title: "Wishlist Saya",
+                          onTap: () {
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const WishlistScreen(),
+                              ),
+                            );
+
+                          },
+                        ),
                           const Divider(
                             color: Color(0xFFF5EBE0),
                             height: 8,
@@ -306,12 +313,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: "Keluar Akun",
                             textColor: const Color(0xFFB13D14),
                             onTap: () async {
-                              await FirebaseAuth.instance.signOut();
+
+                              final result =
+                                  await showDialog<bool>(
+                                context: context,
+
+                                builder: (context) {
+                                  return AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(20),
+                                    ),
+
+                                    title: const Text(
+                                      "Keluar Akun",
+                                    ),
+
+                                    content: const Text(
+                                      "Apakah kamu yakin ingin keluar dari akun ini?",
+                                    ),
+
+                                    actions: [
+
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(
+                                            context,
+                                            false,
+                                          );
+                                        },
+
+                                        child: const Text(
+                                          "Batal",
+                                        ),
+                                      ),
+
+                                      ElevatedButton(
+                                        style:
+                                            ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(
+                                            0xFFB13D14,
+                                          ),
+                                        ),
+
+                                        onPressed: () {
+                                          Navigator.pop(
+                                            context,
+                                            true,
+                                          );
+                                        },
+
+                                        child: const Text(
+                                          "Keluar",
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              if (result != true) return;
+
+                              await FirebaseAuth.instance
+                                  .signOut();
+
                               if (!context.mounted) return;
+
                               Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const LoginScreen(),
+                                  builder: (_) =>
+                                      const LoginScreen(),
                                 ),
                                 (route) => false,
                               );
@@ -455,67 +528,173 @@ class ProductSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        SizedBox(
-          height: 360,
-          child: StreamBuilder<List<BookModel>>(
-            stream: context.read<BookViewModel>().booksStream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      StreamBuilder<List<BookModel>>(
+  stream: context.read<BookViewModel>().booksStream,
 
-              final books = snapshot.data ?? [];
+  builder: (context, snapshot) {
 
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ...books.map((book) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: SizedBox(
-                          width: cardWidth,
-                          child: ProductCard(
-                            imageUrl: book.image,
-                            title: book.title,
-                            author: book.author,
-                            // 🟢 SEKARANG SUDAH DI-FORMAT: Membungkus harga mentah dengan format rupiah otomatis
-                            price: _formatRupiah(book.price),
-                            onTap: () {},
-                            onEditTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Edit ${book.title}')),
-                              );
-                            },
-                            onDeleteTap: () async {
-                              if (book.id != null) {
-                                await context.read<BookViewModel>().deleteBook(
-                                  book.id!,
-                                );
-                              }
-                            },
+    if (!snapshot.hasData) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    final currentUser =
+        FirebaseAuth.instance.currentUser;
+
+    final books =
+        (snapshot.data ?? [])
+            .where(
+              (book) =>
+                  book.sellerId == currentUser?.uid &&!book.isSold
+            )
+            .toList();
+
+    return SizedBox(
+      height: 320,
+
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics:
+            const BouncingScrollPhysics(),
+
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 20,
+        ),
+
+        child: Row(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+
+          children: [
+
+            ...books.map((book) {
+
+              return Padding(
+                padding:
+                    const EdgeInsets.only(
+                  right: 16,
+                ),
+
+                child: SizedBox(
+                  width: cardWidth,
+
+                  child: ProductCard(
+                    imageUrl: book.image,
+                    title: book.title,
+                    author: book.author,
+                    price: _formatRupiah(
+                      book.price,
+                    ),
+
+                    onTap: () {},
+
+                    onEditTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              EditProductScreen(
+                            book: book,
                           ),
                         ),
                       );
-                    }).toList(),
+                    },
 
-                    if (!isSoldOutSection)
-                      SizedBox(
-                        width: cardWidth,
-                        child: _buildEmptyCard(context, emptyCardHeight),
-                      ),
-                  ],
+                    onDeleteTap: () async {
+
+                      final confirm =
+                          await showDialog<bool>(
+                        context: context,
+
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text(
+                              "Hapus Buku",
+                            ),
+
+                            content: Text(
+                              "Yakin ingin menghapus '${book.title}' ?",
+                            ),
+
+                            actions: [
+
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(
+                                    context,
+                                    false,
+                                  );
+                                },
+                                child: const Text(
+                                  "Tidak",
+                                ),
+                              ),
+
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(
+                                    context,
+                                    true,
+                                  );
+                                },
+                                child: const Text(
+                                  "Ya",
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                      if (confirm == true &&
+                          book.id != null) {
+
+                        await context
+                            .read<BookViewModel>()
+                            .deleteBook(
+                              book.id!,
+                            );
+
+                        if (!context.mounted) {
+                          return;
+                        }
+
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Buku berhasil dihapus",
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ),
               );
-            },
-          ),
+            }).toList(),
+
+            if (!isSoldOutSection)
+              SizedBox(
+                width: cardWidth,
+                child: _buildEmptyCard(
+                  context,
+                  emptyCardHeight,
+                ),
+              ),
+          ],
         ),
+      ),
+    );
+  },
+),
       ],
     );
   }
+      
 
   Widget _buildEmptyCard(BuildContext context, double height) {
     return InkWell(
@@ -542,7 +721,7 @@ class ProductSection extends StatelessWidget {
                 size: 40,
                 color: Color(0xFFB13D14),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 6),
               Text(
                 "Tambah Buku",
                 textAlign: TextAlign.center,

@@ -8,18 +8,12 @@ class BookModel {
   final String description;
   final double rating;
   final String storeName;
+  final String sellerId;
   final bool isFavorite;
+  final bool isSold;
   final String year;
   final String isbn;
   final String condition;
-
-  final int stock; // Untuk menampilkan Stok Lapak
-  final int likes; // Untuk menampilkan jumlah Orang yang menyukai
-  final String sellerId; // Id Unik penjual untuk fungsi Chat / Lihat Toko
-  final String sellerCity; // Lokasi kota penjual (misal: Surabaya)
-  final String sellerAvatar; // Foto profil toko penjual
-  final String? physicalDetail; // Data Detail Fisik opsional dari database
-  final List<dynamic>? reviews; // Data Review pembeli opsional dari database
 
   const BookModel({
     this.id,
@@ -31,17 +25,12 @@ class BookModel {
     required this.description,
     required this.rating,
     required this.storeName,
+    required this.sellerId,
+    this.isFavorite = false,
+    this.isSold = false,
     this.year = '',
     this.isbn = '',
     this.condition = '',
-    this.isFavorite = false,
-    this.stock = 1,
-    this.likes = 0,
-    this.sellerId = '',
-    this.sellerCity = 'Indonesia',
-    this.sellerAvatar = '',
-    this.physicalDetail,
-    this.reviews,
   });
 
   BookModel copyWith({
@@ -54,17 +43,12 @@ class BookModel {
     String? description,
     double? rating,
     String? storeName,
+    String? sellerId,
     bool? isFavorite,
+    bool? isSold,
     String? year,
     String? isbn,
     String? condition,
-    int? stock,
-    int? likes,
-    String? sellerId,
-    String? sellerCity,
-    String? sellerAvatar,
-    String? physicalDetail,
-    List<dynamic>? reviews,
   }) {
     return BookModel(
       id: id ?? this.id,
@@ -76,51 +60,62 @@ class BookModel {
       description: description ?? this.description,
       rating: rating ?? this.rating,
       storeName: storeName ?? this.storeName,
+      sellerId: sellerId ?? this.sellerId,
       isFavorite: isFavorite ?? this.isFavorite,
+      isSold: isSold ?? this.isSold,
       year: year ?? this.year,
       isbn: isbn ?? this.isbn,
       condition: condition ?? this.condition,
-      stock: stock ?? this.stock,
-      likes: likes ?? this.likes,
-      sellerId: sellerId ?? this.sellerId,
-      sellerCity: sellerCity ?? this.sellerCity,
-      sellerAvatar: sellerAvatar ?? this.sellerAvatar,
-      physicalDetail: physicalDetail ?? this.physicalDetail,
-      reviews: reviews ?? this.reviews,
     );
   }
 
-  factory BookModel.fromMap(Map<String, dynamic> map, String documentId) {
-    // 🟢 FUNGSI PENGAMANAN RATING (Sudah Bagus!)
+  factory BookModel.fromMap(
+    Map<String, dynamic> map,
+    String documentId,
+  ) {
     double parsedRating = 0.0;
+
     if (map['rating'] is num) {
-      parsedRating = (map['rating'] as num).toDouble();
-    } else if (map['rating'] != null && map['rating'].toString().isNotEmpty) {
-      parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
+      parsedRating =
+          (map['rating'] as num).toDouble();
+    } else if (map['rating'] != null &&
+        map['rating'].toString().isNotEmpty) {
+      parsedRating =
+          double.tryParse(
+                map['rating'].toString(),
+              ) ??
+              0.0;
     }
 
     return BookModel(
       id: documentId,
       title: map['title'] ?? '',
       author: map['author'] ?? '',
-      // Menyelaraskan nama field image/imageUrl agar fleksibel membaca data Firestore
-      image: map['image'] ?? map['imageUrl'] ?? '',
-      price: map['price']?.toString() ?? '',
-      category: map['category'] ?? '',
-      description: map['description'] ?? '',
+      image:
+          map['image'] ??
+          map['imageUrl'] ??
+          '',
+      price:
+          map['price']?.toString() ?? '',
+      category:
+          map['category'] ?? '',
+      description:
+          map['description'] ?? '',
       rating: parsedRating,
-      storeName: map['storeName'] ?? '',
-      isFavorite: map['isFavorite'] ?? false,
-      year: map['year'] ?? '',
-      isbn: map['isbn'] ?? '',
-      condition: map['condition'] ?? '',
-      stock: map['stock'] ?? 1,
-      likes: map['likes'] ?? 0,
-      sellerId: map['sellerId'] ?? '',
-      sellerCity: map['sellerCity'] ?? 'Indonesia',
-      sellerAvatar: map['sellerAvatar'] ?? '',
-      physicalDetail: map['physicalDetail'],
-      reviews: map['reviews'],
+      storeName:
+          map['storeName'] ?? '',
+      sellerId:
+          map['sellerId'] ?? '',
+      isFavorite:
+          map['isFavorite'] ?? false,
+      isSold:
+          map['isSold'] ?? false,
+      year:
+          map['year'] ?? '',
+      isbn:
+          map['isbn'] ?? '',
+      condition:
+          map['condition'] ?? '',
     );
   }
 
@@ -134,17 +129,12 @@ class BookModel {
       'description': description,
       'rating': rating,
       'storeName': storeName,
+      'sellerId': sellerId,
       'isFavorite': isFavorite,
+      'isSold': isSold,
       'year': year,
       'isbn': isbn,
       'condition': condition,
-      'stock': stock,
-      'likes': likes,
-      'sellerId': sellerId,
-      'sellerCity': sellerCity,
-      'sellerAvatar': sellerAvatar,
-      'physicalDetail': physicalDetail,
-      'reviews': reviews,
     };
   }
 }
