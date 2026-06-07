@@ -163,6 +163,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 String roomId = chatVm.getRoomId(chatVm.currentUserId, widget.book.sellerId);
 
                 await chatVm.sendInvoiceMessage(
+                  sellerId: widget.book.sellerId,
                   roomId: roomId,
                   address: "Kurir: $kurirName\nAlamat: $alamatFinal",
                   title: widget.book.title,

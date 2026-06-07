@@ -50,6 +50,7 @@ class ChatViewModel extends ChangeNotifier {
       type: MessageType.text,
     );
 
+    
     WriteBatch batch = _firestore.batch();
 
     // 1. Simpan pesan ke sub-koleksi messages
@@ -86,6 +87,10 @@ class ChatViewModel extends ChangeNotifier {
     String? sellerId,
   }) async {
     try {
+
+    print("SELLER ID = $sellerId")  ;
+    print("ROOM ID = $roomId");     
+
       final now = DateTime.now();
 
       DocumentReference messageRef = _firestore
