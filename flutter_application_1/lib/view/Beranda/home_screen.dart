@@ -58,11 +58,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> toggleWishlist(String docId, bool currentStatus) async {
     try {
-      await FirebaseFirestore.instance.collection('books').doc(docId).update({
-        'isFavorite': !currentStatus,
-      });
+      if (currentStatus == true) {
+        // ❌ JIKA SEBELUMNYA TRUE (Sudah Favorit) -> Sekarang di-Unfavorit
+        await FirebaseFirestore.instance.collection('books').doc(docId).update({
+          'isFavorite': false,
+          'likes': FieldValue.increment(
+            -1,
+          ), // 🟢 Kurangi jumlah suka sebanyak 1
+        });
+      } else {
+        // 🟢 JIKA SEBELUMNYA FALSE (Belum Favorit) -> Sekarang di-Favorit
+        await FirebaseFirestore.instance.collection('books').doc(docId).update({
+          'isFavorite': true,
+          'likes': FieldValue.increment(1), // 🟢 Tambah jumlah suka sebanyak 1
+        });
+      }
     } catch (e) {
-      debugPrint('Gagal update wishlist: $e');
+      debugPrint('Gagal update wishlist & likes: $e');
     }
   }
 

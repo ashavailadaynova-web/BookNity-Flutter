@@ -7,7 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../view/add_offer_screen.dart';
 import '../view/chat_room_screen.dart';
-import 'Pesanan/payment_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final BookModel book;
@@ -40,6 +39,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     super.dispose();
   }
 
+  Future<void> toggleWishlist(String docId, bool currentStatus) async {
+    try {
+      if (currentStatus == true) {
+        // ❌ JIKA SEBELUMNYA TRUE (Sudah Favorit) -> Sekarang di-Unfavorit
+        await FirebaseFirestore.instance.collection('books').doc(docId).update({
+          'isFavorite': false,
+          'likes': FieldValue.increment(
+            -1,
+          ), // 🟢 Kurangi jumlah suka sebanyak 1
+        });
+      } else {
+        // 🟢 JIKA SEBELUMNYA FALSE (Belum Favorit) -> Sekarang di-Favorit
+        await FirebaseFirestore.instance.collection('books').doc(docId).update({
+          'isFavorite': true,
+          'likes': FieldValue.increment(1), // 🟢 Tambah jumlah suka sebanyak 1
+        });
+      }
+    } catch (e) {
+      debugPrint('Gagal update wishlist & likes: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,6 +86,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         ),
         centerTitle: true,
       ),
+
+      // Menggunakan Column agar Bottom Bar di bawah tetap terkunci sempurna
       body: Column(
         children: [
           // 1. AREA KONTEN (Bisa di-scroll)
@@ -185,37 +208,63 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                   const SizedBox(height: 24),
 
-                  // BOX STATISTIK PRODUK
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F0E6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStatItem(
-                          'Rating Buku',
-                          '${widget.book.rating} ★',
+                  // BOX STATISTIK PRODUK (REALTIME & SECURE VERSION)
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('books')
+                        .doc(
+                          widget.book.id ?? '',
+                        ) // 🟢 Tanda ?? '' mengamankan String? agar tidak error merah
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      // 1. Ambil data fallback awal dari widget bawaan
+                      double rating = widget.book.rating;
+                      int likesCount = widget.book.likes;
+                      int stock = widget.book.stock;
+
+                      // 2. Jika snapshot database berhasil masuk dan datanya ada, timpa dengan data terbaru
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final bookData =
+                            snapshot.data!.data() as Map<String, dynamic>?;
+
+                        if (bookData != null) {
+                          if (bookData['rating'] is num) {
+                            rating = (bookData['rating'] as num).toDouble();
+                          }
+                          likesCount = bookData['likes'] ?? likesCount;
+                          stock = bookData['stock'] ?? stock;
+                        }
+                      }
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F0E6),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        Container(
-                          width: 1,
-                          height: 25,
-                          color: Colors.grey.shade300,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildStatItem('Rating Buku', '$rating ★'),
+                            Container(
+                              width: 1,
+                              height: 25,
+                              color: Colors.grey.shade300,
+                            ),
+                            _buildStatItem(
+                              'Disukai',
+                              '$likesCount Orang',
+                            ), // 🟢 Update live mengikuti Firestore!
+                            Container(
+                              width: 1,
+                              height: 25,
+                              color: Colors.grey.shade300,
+                            ),
+                            _buildStatItem('Stok Lapak', '$stock Buku'),
+                          ],
                         ),
-                        _buildStatItem('Disukai', '${widget.book.likes} Orang'),
-                        Container(
-                          width: 1,
-                          height: 25,
-                          color: Colors.grey.shade300,
-                        ),
-                        _buildStatItem(
-                          'Stok Lapak',
-                          '${widget.book.stock} Buku',
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
 
@@ -241,7 +290,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     ],
                   ),
 
-                  // KONTEN TABBAR
+                  // KONTEN TABBAR (DIBUNGKUS ANIMATEDBUILDER AGAR RESPONSIF SAAT DIKLIK)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: AnimatedBuilder(
@@ -346,18 +395,42 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   // IDENTITAS LAPAK PENJUAL
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 22,
-                        backgroundColor: Colors.grey.shade300,
-                        backgroundImage:
-                            widget.book.sellerAvatar.startsWith('http')
-                            ? NetworkImage(widget.book.sellerAvatar)
-                            : (widget.book.sellerAvatar.isNotEmpty
-                                      ? AssetImage(widget.book.sellerAvatar)
-                                      : const AssetImage(
-                                          'assets/images/default_avatar.png',
-                                        ))
-                                  as ImageProvider,
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(
+                              widget.book.sellerId,
+                            ) // Mengambil data user berdasarkan ID Penjual
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          // 1. Siapkan foto default awal dari data widget bawaan sebagai cadangan
+                          String avatarUrl = widget.book.sellerAvatar;
+
+                          // 2. Jika data dari database berhasil ditarik, timpa dengan foto profil terbaru
+                          if (snapshot.hasData && snapshot.data!.exists) {
+                            final userData =
+                                snapshot.data!.data() as Map<String, dynamic>?;
+                            if (userData != null &&
+                                userData['photoUrl'] != null) {
+                              avatarUrl =
+                                  userData['photoUrl']; // 🟢 Sesuaikan 'photoUrl' dengan nama field foto profil di koleksi users-mu
+                            }
+                          }
+
+                          // 3. Tampilkan CircleAvatar dengan logika pengecekan tautan (URL / Asset)
+                          return CircleAvatar(
+                            radius: 22,
+                            backgroundColor: Colors.grey.shade300,
+                            backgroundImage: avatarUrl.startsWith('http')
+                                ? NetworkImage(avatarUrl)
+                                : (avatarUrl.isNotEmpty
+                                          ? AssetImage(avatarUrl)
+                                          : const AssetImage(
+                                              'assets/images/default_avatar.png',
+                                            ))
+                                      as ImageProvider,
+                          );
+                        },
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -372,25 +445,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 color: Colors.black87,
                               ),
                             ),
-                            Text(
-                              widget.book.storeName,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
                           ],
                         ),
                       ),
                       OutlinedButton(
                         onPressed: () async {
+                          // 🟢 LANGKAH PENYELAMAT: Validasi sebelum masuk ke Firestore
                           final sId = widget.book.sellerId;
-                          if (sId.trim().isEmpty) {
+                          if (sId == null || sId.trim().isEmpty) {
                             _showSnackBar(
                               context,
-                              'Gagal melihat toko: ID Penjual tidak valid.',
+                              'Gagal melihat toko: ID Penjual kosong atau tidak valid pada buku ini.',
                             );
-                            return;
+                            return; // Stop fungsi di sini, jangan biarkan lanjut ke bawah agar tidak crash
                           }
 
                           _showLoadingDialog(context);
@@ -398,10 +465,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             DocumentSnapshot sellerDoc = await FirebaseFirestore
                                 .instance
                                 .collection('users')
-                                .doc(sId)
+                                .doc(
+                                  sId,
+                                ) // 🟢 Aman karena sudah divalidasi di atas
                                 .get();
 
-                            if (context.mounted) Navigator.pop(context);
+                            if (context.mounted)
+                              Navigator.pop(context); // Tutup loading
 
                             if (sellerDoc.exists && context.mounted) {
                               Map<String, dynamic> sellerData =
@@ -411,14 +481,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => OtherProfileScreen(
-                                    sellerId: widget.book.sellerId,
+                                    sellerId: sId,
                                     name:
                                         sellerData['name'] ??
                                         sellerData['username'] ??
                                         widget
                                             .book
                                             .storeName, // Tambahkan fallback username
-                                    joinYear: sellerData['joinYear'] ?? '2024',
+                                    joinYear: sellerData['joinYear'] ?? '2026',
                                     followers:
                                         '${sellerData['followers'] ?? 0}',
                                     following:
@@ -472,7 +542,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                   const SizedBox(height: 24),
 
-                  // AREA BUKU SERUBA
+                  // AREA BUKU SERUPA
                   const Row(
                     children: [
                       Text(
@@ -488,7 +558,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   const SizedBox(height: 8),
 
                   SizedBox(
-                    height: 250,
+                    height: 300,
                     child: StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('books')
@@ -553,21 +623,53 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           separatorBuilder: (context, index) =>
                               const SizedBox(width: 16),
                           itemBuilder: (context, index) {
-                            final bookData =
-                                recommendedBooks[index].data()
-                                    as Map<String, dynamic>;
-                            return BuyerProductCard(
-                              imageUrl:
-                                  bookData['imageUrl'] ??
-                                  'assets/images/placeholder.jpg',
-                              title: bookData['title'] ?? 'Tanpa Judul',
-                              author: bookData['author'] ?? 'Anonim',
-                              price: 'Rp ${bookData['price'] ?? 0}',
-                              rating: '${bookData['rating'] ?? 0.0}',
-                              storeName: bookData['storeName'] ?? 'Toko Buku',
-                              isFavorite: bookData['isFavorite'] ?? false,
-                              onTap: () {},
-                              onFavoriteTap: () {},
+                            final doc = recommendedBooks[index];
+                            final bookData = doc.data() as Map<String, dynamic>;
+                            final bool currentIsFavorite =
+                                bookData['isFavorite'] ?? false;
+
+                            // 🟢 BUNGKUS DENGAN SIZEDBOX AGAR MEMILIKI UKURAN PASTI (Mencegah Unbounded Constraints)
+                            return SizedBox(
+                              width: 150, // 👈 Kunci lebar card di sini
+                              height: 300, // 👈 Kunci tinggi card di sini
+                              child: BuyerProductCard(
+                                imageUrl:
+                                    bookData['image'] ??
+                                    'assets/images/placeholder.jpg',
+                                title: bookData['title'] ?? 'Tanpa Judul',
+                                author: bookData['author'] ?? 'Anonim',
+                                price: 'Rp ${bookData['price'] ?? 0}',
+                                // 🟢 Penyelamat Null Check: Jangan gunakan parsing paksa jika ragu tipe datanya
+                                rating: bookData['rating'] != null
+                                    ? '${bookData['rating']}'
+                                    : '0.0',
+                                storeName: bookData['storeName'] ?? 'Toko Buku',
+                                isFavorite:
+                                    currentIsFavorite, // Ambil status asli dari Firestore
+                                onTap: () {
+                                  final clickedBook = BookModel.fromMap(
+                                    doc.data() as Map<String, dynamic>,
+                                    doc.id,
+                                  );
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProductDetailScreen(
+                                        book: clickedBook,
+                                      ),
+                                    ),
+                                  );
+                                },
+
+                                onFavoriteTap: () async {
+                                  // 🟢 Memanggil fungsi toggle yang otomatis memperbarui 'isFavorite' sekaligus jumlah 'likes' (+1 / -1)
+                                  await toggleWishlist(
+                                    doc.id,
+                                    currentIsFavorite,
+                                  );
+                                },
+                              ),
                             );
                           },
                         );
@@ -617,27 +719,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         size: 20,
                       ),
                       onPressed: () {
+                        // 1. Ambil user yang sedang login saat ini via FirebaseAuth
                         final currentUser = FirebaseAuth.instance.currentUser;
 
                         if (currentUser == null) {
-                          _showSnackBar(
-                            context,
-                            'Silakan login terlebih dahulu untuk chat penjual.',
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Silakan login terlebih dahulu untuk chat penjual.',
+                              ),
+                            ),
                           );
                           return;
                         }
 
                         final buyerId = currentUser.uid;
-                        final sellerId = widget.book.sellerId;
+                        final sellerId = widget
+                            .book
+                            .sellerId; // Pastikan model buku kamu punya field sellerId
 
+                        // 2. Cegah jika pembeli mencoba chat diri sendiri (pemilik buku)
                         if (buyerId == sellerId) {
-                          _showSnackBar(
-                            context,
-                            'Ini adalah buku Anda sendiri.',
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Ini adalah buku Anda sendiri.'),
+                            ),
                           );
                           return;
                         }
 
+                        // 3. Pindah ke halaman ChatRoomScreen dengan HANYA membawa sellerId
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -654,22 +765,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       height: 48,
                       child: OutlinedButton(
                         onPressed: () {
+                          // 👇 PERBAIKAN: Menggunakan widget.book
                           final cleanPriceString = widget.book.price
                               .replaceAll('.', '')
                               .replaceAll(',', '');
                           final double parsedPrice =
                               double.tryParse(cleanPriceString) ?? 0.0;
+                          final String currentUserId =
+                              FirebaseAuth.instance.currentUser?.uid ?? '';
+                          final String generatedRoomId =
+                              "${currentUserId}_${widget.book.sellerId}";
 
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => OfferScreen(
-                                productId: widget.book.id ?? '',
-                                title: widget.book.title,
-                                author: widget.book.author,
-                                imageUrl: widget.book.image,
+                                book: widget.book,
+                                productId:
+                                    widget.book.id ??
+                                    '', // 👇 PERBAIKAN: widget.book
+                                title: widget
+                                    .book
+                                    .title, // 👇 PERBAIKAN: widget.book
+                                author: widget
+                                    .book
+                                    .author, // 👇 PERBAIKAN: widget.book
+                                imageUrl: widget
+                                    .book
+                                    .image, // 👇 PERBAIKAN: widget.book
                                 originalPrice: parsedPrice,
-                                sellerId: widget.book.sellerId,
+                                sellerId: widget
+                                    .book
+                                    .sellerId, // 👇 PERBAIKAN: widget.book
+                                roomId: generatedRoomId,
                               ),
                             ),
                           );
@@ -699,16 +827,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // Navigasi dengan membawa objek data buku ke halaman pembayaran
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  PaymentScreen(book: widget.book),
-                            ),
-                          );
-                        },
+                        onPressed: () {},
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFA23914),
                           foregroundColor: Colors.white,
@@ -738,60 +857,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   Widget _buildImagePlaceholder() {
     return Container(
-      color: Colors.grey.shade300,
-      child: const Center(
-        child: Icon(Icons.menu_book_rounded, size: 50, color: Colors.grey),
-      ),
+      color: const Color(0xFFEFEBE4),
+      child: const Icon(Icons.book, size: 50, color: Colors.grey),
     );
   }
 
-  Widget _buildTag(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F0E6),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color(0xFFA23914),
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String title, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        const SizedBox(height: 4),
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-      ],
-    );
-  }
-
-  Widget _buildReviewItem(String name, String rating, String review) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(rating),
-          const SizedBox(height: 4),
-          Text(review),
-        ],
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFFA23914)),
       ),
     );
   }
@@ -802,13 +878,81 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _showLoadingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return const Center(child: CircularProgressIndicator());
-      },
+  Widget _buildTag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECE6DA),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          color: Colors.grey.shade800,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewItem(String name, String rating, String comment) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              name,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Colors.black87,
+              ),
+            ),
+            Text(
+              rating,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.amber,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          comment,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey.shade700,
+            height: 1.4,
+          ),
+        ),
+      ],
     );
   }
 }

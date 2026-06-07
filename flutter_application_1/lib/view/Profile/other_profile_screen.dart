@@ -106,13 +106,25 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
     }
   }
 
-  Future<void> _toggleWishlist(String docId, bool currentStatus) async {
+  Future<void> toggleWishlist(String docId, bool currentStatus) async {
     try {
-      await FirebaseFirestore.instance.collection('books').doc(docId).update({
-        'isFavorite': !currentStatus,
-      });
+      if (currentStatus == true) {
+        // ❌ JIKA SEBELUMNYA TRUE (Sudah Favorit) -> Sekarang di-Unfavorit
+        await FirebaseFirestore.instance.collection('books').doc(docId).update({
+          'isFavorite': false,
+          'likes': FieldValue.increment(
+            -1,
+          ), // 🟢 Kurangi jumlah suka sebanyak 1
+        });
+      } else {
+        // 🟢 JIKA SEBELUMNYA FALSE (Belum Favorit) -> Sekarang di-Favorit
+        await FirebaseFirestore.instance.collection('books').doc(docId).update({
+          'isFavorite': true,
+          'likes': FieldValue.increment(1), // 🟢 Tambah jumlah suka sebanyak 1
+        });
+      }
     } catch (e) {
-      debugPrint('Gagal update wishlist: $e');
+      debugPrint('Gagal update wishlist & likes: $e');
     }
   }
 
@@ -643,8 +655,8 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                 );
               },
               onFavoriteTap: () async {
-                // 🟢 Berfungsi langsung menyimpan status ke database wishlist
-                await _toggleWishlist(doc.id, currentIsFavorite);
+                // 🟢 Memanggil fungsi toggle yang otomatis memperbarui 'isFavorite' sekaligus jumlah 'likes' (+1 / -1)
+                await toggleWishlist(doc.id, currentIsFavorite);
               },
             ),
           );
