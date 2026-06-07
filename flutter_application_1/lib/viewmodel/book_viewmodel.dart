@@ -10,6 +10,7 @@ import '../services/book_service.dart';
 class BookViewModel extends ChangeNotifier {
   final BookService _service = BookService();
 
+
   bool _isLoading = false;
 
   bool get isLoading => _isLoading;
@@ -22,12 +23,22 @@ class BookViewModel extends ChangeNotifier {
     return _books;
   }
 
+  List<BookModel> getMyBooks(
+      String uid,
+    ) {
+      return _books.where((book) {
+        return book.sellerId == uid;
+      }).toList();
+    }
+
   List<BookModel> searchBooks(String keyword) {
     return _books.where((book) {
       return book.title.toLowerCase().contains(keyword.toLowerCase()) ||
           book.author.toLowerCase().contains(keyword.toLowerCase());
     }).toList();
   }
+
+  
 
   List<BookModel> getBooksByCategory(String category) {
     if (category == 'SEMUA') {

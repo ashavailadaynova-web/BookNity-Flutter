@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'success_add_product_screen.dart';
 import 'dart:io';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../model/book_model.dart';
+import '../../viewmodel/book_viewmodel.dart';
 
-import '../model/book_model.dart';
-import '../viewmodel/book_viewmodel.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+class EditProductScreen extends StatefulWidget {
+  final BookModel book;
 
-class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({super.key});
+  const EditProductScreen({
+    super.key,
+    required this.book,
+  });
 
   @override
-  State<AddProductScreen> createState() => _AddProductScreenState();
+  State<EditProductScreen> createState() =>
+      _EditProductScreenState();
 }
 
-class _AddProductScreenState extends State<AddProductScreen> {
+class _EditProductScreenState extends State<EditProductScreen> {
   File? selectedImage;
   bool _isLoading = false; 
 
@@ -40,6 +43,40 @@ class _AddProductScreenState extends State<AddProductScreen> {
     "Sejarah",
   ];
 
+  @override
+void initState() {
+  super.initState();
+
+  titleController.text =
+      widget.book.title;
+
+  authorController.text =
+      widget.book.author;
+
+  yearController.text =
+      widget.book.year;
+
+  isbnController.text =
+      widget.book.isbn;
+
+  priceController.text =
+      widget.book.price;
+
+  descriptionController.text =
+      widget.book.description;
+
+  if (categories.contains(
+      widget.book.category,
+    )) {
+
+  selectedCategory =
+      widget.book.category;
+}
+
+  selectedCondition =
+      widget.book.condition;
+}
+
   Future<void> pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
 
@@ -50,72 +87,99 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  Future<void> uploadBook() async {
-    if (selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan pilih cover buku terlebih dahulu'),
+ Future<void> updateBook() async {
+
+  if (titleController.text.trim().isEmpty ||
+      authorController.text.trim().isEmpty ||
+      priceController.text.trim().isEmpty) {
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Lengkapi data buku terlebih dahulu',
         ),
-      );
-      return;
-    }
+      ),
+    );
 
-    if (titleController.text.trim().isEmpty ||
-        authorController.text.trim().isEmpty ||
-        priceController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lengkapi data buku terlebih dahulu')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final bookViewModel = context.read<BookViewModel>();
-
-      // 🟢 Mengunggah file ke Cloudinary dan menghasilkan URL string aman (https)
-      final imageUrl = await bookViewModel.uploadImage(selectedImage!);
-
-      final book = BookModel(
-        title: titleController.text.trim(),
-        author: authorController.text.trim(),
-        image: imageUrl, // URL Cloudinary dikirim sebagai data String
-        price: priceController.text.trim(),
-        category: selectedCategory,
-        description: descriptionController.text.trim(),
-        rating: 0.0, // 🟢 Menggunakan 0.0 (double) agar sesuai dengan struktur model bertipe pecahan
-        storeName: "Booknity Store",
-        year: yearController.text.trim(),
-        isbn: isbnController.text.trim(),
-        condition: selectedCondition,
-        sellerId:
-         FirebaseAuth.instance.currentUser!.uid,
-      );
-
-      // Mengirim objek buku baru ke Firestore
-      await bookViewModel.addBook(book);
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const SuccessAddProductScreen()),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload gagal: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    return;
   }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+
+    String imageUrl =
+        widget.book.image;
+
+    if (selectedImage != null) {
+
+      imageUrl =
+          await context
+              .read<BookViewModel>()
+              .uploadImage(
+                selectedImage!,
+              );
+    }
+
+    final updatedBook =
+        widget.book.copyWith(
+      title:
+          titleController.text.trim(),
+      author:
+          authorController.text.trim(),
+      image: imageUrl,
+      price:
+          priceController.text.trim(),
+      category:
+          selectedCategory,
+      description:
+          descriptionController.text.trim(),
+      year:
+          yearController.text.trim(),
+      isbn:
+          isbnController.text.trim(),
+      condition:
+          selectedCondition,
+    );
+
+    await context
+        .read<BookViewModel>()
+        .updateBook(
+          updatedBook,
+        );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Produk berhasil diperbarui',
+        ),
+      ),
+    );
+
+    Navigator.pop(context);
+
+  } catch (e) {
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(
+        content: Text(
+          'Gagal: $e',
+        ),
+      ),
+    );
+  }
+
+  setState(() {
+    _isLoading = false;
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +189,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         elevation: 0,
         backgroundColor: const Color(0xffF8F6F4),
         title: const Text(
-          "Tambah Produk",
+          "Edit Produk",
           style: TextStyle(
             color: Color(0xff2B2522),
             fontWeight: FontWeight.w700,
@@ -154,6 +218,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ),
 
             const SizedBox(height: 28),
+
+            Text(
+            "Ketuk gambar untuk mengganti cover",
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.grey,
+              fontSize: 12,
+            ),
+          ),
+
+          const SizedBox(height: 28),
 
             _title("JUDUL BUKU"),
             _textField(controller: titleController, hint: "Judul buku"),
@@ -296,7 +370,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : uploadBook,
+                onPressed:
+                _isLoading
+                    ? null
+                    : updateBook,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8F4F17), 
                   disabledBackgroundColor: const Color(0xffD9D9D9),
@@ -315,7 +392,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         ),
                       )
                     : Text(
-                        "Unggah Produk",
+                        "Simpan Perubahan",
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -415,59 +492,63 @@ class _AddProductScreenState extends State<AddProductScreen> {
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: const Color(0xffE6DDD5)),
       ),
-      child: selectedImage != null && large
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: Image.file(
-                selectedImage!,
-                fit: BoxFit.cover,
-                width: width,
-                height: height,
-              ),
-            )
-          : large
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 58,
-                      height: 58,
-                      decoration: const BoxDecoration(
-                        color: Color(0xffB84A14),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.add_a_photo_outlined,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Add Cover Photo",
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xff2B2522),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Recommended: Bright, natural light",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                )
-              : const Center(
-                  child: Icon(
-                    Icons.add_a_photo_outlined,
-                    size: 28,
-                    color: Color(0xffD5C8BF),
-                  ),
+      child: selectedImage != null
+    ? ClipRRect(
+        borderRadius:
+            BorderRadius.circular(
+          28,
+        ),
+        child: Image.file(
+          selectedImage!,
+          fit: BoxFit.cover,
+        ),
+      )
+
+    : widget.book.image.isNotEmpty
+        ? ClipRRect(
+            borderRadius:
+                BorderRadius.circular(
+              28,
+            ),
+            child: Image.network(
+              widget.book.image,
+              fit: BoxFit.cover,
+            ),
+          )
+
+        : Column(
+            mainAxisAlignment:
+                MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration:
+                    const BoxDecoration(
+                  color:
+                      Color(0xffB84A14),
+                  shape:
+                      BoxShape.circle,
                 ),
+                child: const Icon(
+                  Icons.add_a_photo_outlined,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+              Text(
+                "Add Cover Photo",
+                style:
+                    GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight:
+                      FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
     );
   }
 }

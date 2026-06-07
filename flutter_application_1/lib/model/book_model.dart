@@ -12,6 +12,8 @@ class BookModel {
   final String year;
   final String isbn;
   final String condition;
+  final String sellerId;
+  final bool isSold;
 
   const BookModel({
     this.id,
@@ -23,10 +25,12 @@ class BookModel {
     required this.description,
     required this.rating,
     required this.storeName,
+    required this.sellerId,
     this.year = '',
     this.isbn = '',
     this.condition = '',
     this.isFavorite = false,
+    this.isSold = false,
   });
 
   BookModel copyWith({
@@ -43,6 +47,8 @@ class BookModel {
     String? year,
     String? isbn,
     String? condition,
+    String? sellerId,
+    bool? isSold,
   }) {
     return BookModel(
       id: id ?? this.id,
@@ -58,37 +64,61 @@ class BookModel {
       year: year ?? this.year,
       isbn: isbn ?? this.isbn,
       condition: condition ?? this.condition,
+      sellerId: sellerId ?? this.sellerId,
+      isSold: isSold ?? this.isSold,
     );
   }
 
-  factory BookModel.fromMap(Map<String, dynamic> map, String documentId) {
-    // 🟢 FUNGSI PENGAMANAN RATING (Sudah Bagus!)
+  factory BookModel.fromMap(
+    Map<String, dynamic> map,
+    String documentId,
+  ) {
     double parsedRating = 0.0;
+
     if (map['rating'] is num) {
-      parsedRating = (map['rating'] as num).toDouble();
-    } else if (map['rating'] != null && map['rating'].toString().isNotEmpty) {
-      parsedRating = double.tryParse(map['rating'].toString()) ?? 0.0;
+      parsedRating =
+          (map['rating'] as num).toDouble();
+    } else if (map['rating'] != null &&
+        map['rating']
+            .toString()
+            .isNotEmpty) {
+      parsedRating =
+          double.tryParse(
+                map['rating'].toString(),
+              ) ??
+              0.0;
     }
 
     return BookModel(
       id: documentId,
       title: map['title'] ?? '',
       author: map['author'] ?? '',
-      // Menyelaraskan nama field image/imageUrl agar fleksibel membaca data Firestore
-      image: map['image'] ?? map['imageUrl'] ?? '',
-      price: map['price']?.toString() ?? '',
-      category: map['category'] ?? '',
-      description: map['description'] ?? '',
+      image:
+          map['image'] ??
+          map['imageUrl'] ??
+          '',
+      price:
+          map['price']?.toString() ?? '',
+      category:
+          map['category'] ?? '',
+      description:
+          map['description'] ?? '',
       rating: parsedRating,
-      storeName: map['storeName'] ?? '',
-      isFavorite: map['isFavorite'] ?? false,
-      year: map['year'] ?? '',
-      isbn: map['isbn'] ?? '',
-      condition: map['condition'] ?? '',
+      storeName:
+          map['storeName'] ?? '',
+      sellerId:
+          map['sellerId'] ?? '',
+      isFavorite:
+          map['isFavorite'] ?? false,
+      year:
+          map['year'] ?? '',
+      isbn:
+          map['isbn'] ?? '',
+      condition:
+          map['condition'] ?? '',
     );
   }
 
-  // 🟢 REVISI UTAMA: Menambahkan field year, isbn, dan condition ke map data agar ikut terupload ke Firestore
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -99,10 +129,12 @@ class BookModel {
       'description': description,
       'rating': rating,
       'storeName': storeName,
+      'sellerId': sellerId,
       'isFavorite': isFavorite,
       'year': year,
       'isbn': isbn,
       'condition': condition,
+      'isSold': isSold,
     };
   }
 }

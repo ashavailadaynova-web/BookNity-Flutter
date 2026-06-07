@@ -211,19 +211,84 @@ class _AddressListScreenState
 
                                 children: [
 
-                                  Text(
-                                    address
-                                        .label,
-                                    style:
-                                        GoogleFonts
-                                            .poppins(
-                                      fontSize:
-                                          15,
-                                      fontWeight:
-                                          FontWeight
-                                              .bold,
-                                    ),
-                                  ),
+                                  Row(
+  mainAxisAlignment:
+      MainAxisAlignment.spaceBetween,
+
+  children: [
+
+    Expanded(
+      child: Text(
+        address.label,
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+        ),
+      ),
+    ),
+
+    IconButton(
+      icon: const Icon(
+        Icons.delete_outline,
+        color: Colors.red,
+      ),
+
+      onPressed: () async {
+
+        final user =
+            FirebaseAuth.instance.currentUser;
+
+        if (user == null) return;
+
+        final confirm =
+            await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text(
+              "Hapus Alamat",
+            ),
+            content: const Text(
+              "Yakin ingin menghapus alamat ini?",
+            ),
+            actions: [
+
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(
+                  context,
+                  false,
+                ),
+                child: const Text(
+                  "Batal",
+                ),
+              ),
+
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(
+                  context,
+                  true,
+                ),
+                child: const Text(
+                  "Hapus",
+                ),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm != true) return;
+
+        await context
+            .read<AddressViewModel>()
+            .deleteAddress(
+              user.uid,
+              address.id,
+            );
+      },
+    ),
+  ],
+),
 
                                   const SizedBox(
                                     height:
