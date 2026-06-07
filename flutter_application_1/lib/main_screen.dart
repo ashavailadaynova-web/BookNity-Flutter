@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'view/Pesanan/pesanan_screen.dart';
 import 'view/Beranda/home_screen.dart';
 import 'view/Profile/profile_screen.dart';
+import 'view/Notifikasi/notifikasi_screen.dart';
 
 // 🔥 SESUAI STRUKTUR PROYEKMU: Mengimport halaman tambah produk/buku
 import 'view/add_product_screen.dart';
-
 
 class MainScreen extends StatefulWidget {
   final int selectedIndex;
@@ -24,15 +24,14 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
 
-  _currentIndex =
-      widget.selectedIndex;
-}
+    _currentIndex = widget.selectedIndex;
+  }
 
   // List halaman utama navigasi bawah
   final List<Widget> _screens = [
     const HomeScreen(),
     const PesananScreen(),
-    const Center(child: Text("Halaman Notifikasi (Segera Hadir)")),
+    const NotificationScreen(),
     const ProfileScreen(),
   ];
 

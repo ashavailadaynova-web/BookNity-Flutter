@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../view/add_offer_screen.dart';
 import '../view/chat_room_screen.dart';
+import '../view/Pesanan/payment_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final BookModel book;
@@ -828,7 +829,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  PaymentScreen(book: widget.book),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFA23914),
                           foregroundColor: Colors.white,

@@ -16,6 +16,11 @@ class AddressViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateAddress(String uid, AddressModel address) async {
+    await _service.updateAddress(uid, address);
+    await loadAddresses(uid);
+  }
+
   Future<void> addAddress(String uid, AddressModel address) async {
     await _service.addAddress(uid, address);
 

@@ -5,11 +5,19 @@ class AddressService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> addAddress(String uid, AddressModel address) async {
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('addresses')
-        .add(address.toMap());
+    try {
+      print("Mencoba simpan alamat untuk uid: $uid");
+      print("Data: ${address.toMap()}");
+      final ref = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('addresses')
+          .add(address.toMap());
+      print("BERHASIL disimpan dengan id: ${ref.id}");
+    } catch (e) {
+      print("ERROR simpan alamat: $e");
+      rethrow;
+    }
   }
 
   Future<List<AddressModel>> getAddresses(String uid) async {
@@ -24,7 +32,6 @@ class AddressService {
         .toList();
   }
 
-  // TAMBAHKAN INI
   Future<void> deleteAddress(String uid, String addressId) async {
     await _firestore
         .collection('users')
@@ -32,5 +39,14 @@ class AddressService {
         .collection('addresses')
         .doc(addressId)
         .delete();
+  }
+
+  Future<void> updateAddress(String uid, AddressModel address) async {
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('addresses')
+        .doc(address.id)
+        .update(address.toMap());
   }
 }

@@ -200,28 +200,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildActivityItem(
-                                Icons.menu_book_rounded,
-                                "0",
-                                "Dijual",
-                                const Color(0xFFFFB74D),
-                              ),
-                              _buildActivityItem(
-                                Icons.local_shipping_rounded,
-                                "0",
-                                "Terjual",
-                                const Color(0xFF81C784),
-                              ),
-                              _buildActivityItem(
-                                Icons.star_rounded,
-                                "0.0",
-                                "Rating",
-                                const Color(0xFFFFD54F),
-                              ),
-                            ],
+                          // Ganti ini:
+
+                          // Jadi ini:
+                          StreamBuilder<List<BookModel>>(
+                            stream: context.read<BookViewModel>().booksStream,
+                            builder: (context, snapshot) {
+                              final currentUser =
+                                  FirebaseAuth.instance.currentUser;
+                              final books = snapshot.data ?? [];
+
+                              // Hitung produk aktif (belum terjual)
+                              final dijualCount = books
+                                  .where(
+                                    (b) =>
+                                        b.sellerId == currentUser?.uid &&
+                                        !b.isSold,
+                                  )
+                                  .length;
+
+                              // Hitung produk terjual
+                              final terjualCount = books
+                                  .where(
+                                    (b) =>
+                                        b.sellerId == currentUser?.uid &&
+                                        b.isSold,
+                                  )
+                                  .length;
+
+                              return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  _buildActivityItem(
+                                    Icons.menu_book_rounded,
+                                    dijualCount.toString(),
+                                    "Dijual",
+                                    const Color(0xFFFFB74D),
+                                  ),
+                                  _buildActivityItem(
+                                    Icons.local_shipping_rounded,
+                                    terjualCount.toString(),
+                                    "Terjual",
+                                    const Color(0xFF81C784),
+                                  ),
+                                  _buildActivityItem(
+                                    Icons.star_rounded,
+                                    "0.0",
+                                    "Rating",
+                                    const Color(0xFFFFD54F),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ],
                       ),
