@@ -41,6 +41,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => BookViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => UserViewModel()),
+        // 🟢 SEKARANG SUDAH DITAMBAHKAN BIAR DAFTAR ALAMAT TIDAK EROR MERAH LAGI:
+        ChangeNotifierProvider(create: (_) => AddressViewModel()),
 
         ListenableProvider<ChatViewModel>(create: (_) => ChatViewModel()),
       ],
@@ -72,7 +74,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/help_center': (context) => const HelpCenterScreen(),
         '/notification': (context) => const NotificationScreen(),
-        
+
         // 🟢 CATATAN: Rute '/product_detail' sengaja DIHAPUS dari sini agar tidak eror const.
         // Proses perpindahan ke halaman detail produk sekarang menggunakan MaterialPageRoute langsung di dalam widget kartu produk (onTap).
       },
@@ -85,7 +87,8 @@ class MainOnboardingContainer extends StatefulWidget {
   const MainOnboardingContainer({super.key});
 
   @override
-  State<MainOnboardingContainer> createState() => _MainOnboardingContainerState();
+  State<MainOnboardingContainer> createState() =>
+      _MainOnboardingContainerState();
 }
 
 class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
@@ -97,7 +100,9 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
   void initState() {
     super.initState();
     // Mengatur geser otomatis setiap 4 detik
-    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+    _onboardingTimer = Timer.periodic(const Duration(seconds: 4), (
+      Timer timer,
+    ) {
       if (_currentPage < 2) {
         _currentPage++;
         if (_pageController.hasClients) {
@@ -134,7 +139,7 @@ class _MainOnboardingContainerState extends State<MainOnboardingContainer> {
           });
         },
         children: [
-          OnboardingScreen(),  // Halaman 1
+          OnboardingScreen(), // Halaman 1
           OnboardingScreen2(), // Halaman 2
           OnboardingScreen3(), // Halaman 3
         ],
