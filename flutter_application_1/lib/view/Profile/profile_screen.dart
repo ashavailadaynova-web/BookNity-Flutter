@@ -55,7 +55,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ? userData!.name
             : "Pengguna";
 
-        final email = userData?.email ?? firebaseUser.email ?? "";
+        // Mengambil data bio dari user, jika kosong diberi teks default alternatif
+        final bio = userData?.bio != null && userData!.bio.isNotEmpty
+            ? userData.bio
+            : "Belum ada bio.";
 
         return Scaffold(
           backgroundColor: backgroundColor,
@@ -114,11 +117,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    email,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+
+                  // Bagian Email sudah sukses diubah menjadi Bio pengguna
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      bio,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontStyle: userData?.bio.isNotEmpty == true
+                            ? FontStyle.normal
+                            : FontStyle.italic,
+                      ),
                     ),
                   ),
 
@@ -469,8 +481,7 @@ class ProductSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment
-                .spaceBetween, // Diperbaiki dari 'between' ke MainAxisAlignment.spaceBetween
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 title,
