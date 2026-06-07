@@ -4,7 +4,7 @@ BookNity adalah aplikasi *mobile e-commerce* berbasis digital yang dirancang khu
 Aplikasi ini bertujuan untuk memperluas jangkauan pasar para pedagang lokal agar dapat menjangkau konsumen di seluruh Indonesia, 
 mendukung perputaran buku bekas guna meningkatkan akses literasi dengan harga terjangkau, serta mendigitalisasi proses transaksi dan pencatatan riwayat pemesanan secara terintegrasi.
 
-## 👥 Informasi Pembuat (Kelompok)
+## 👥 Nama Kelompok Gunung Fuji
 
 Aplikasi ini dikembangkan oleh Tim Mahasiswa Program Studi Sistem Informasi:
 
