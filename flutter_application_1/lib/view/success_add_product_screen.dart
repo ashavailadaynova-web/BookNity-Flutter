@@ -17,7 +17,6 @@ class SuccessAddProductScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
 
-                /// ICON CHECK
                 Container(
                   width: 96,
                   height: 96,
