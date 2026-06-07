@@ -206,11 +206,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 3. Banner Promo Slider
+  // 3. Banner Promo Slider (SUDAH DIPERBAIKI)
   Widget _buildBannerSlider() {
     List<String> bannerImages = [
       'assets/promo_summer.png',
-      'assets/promo_komik.png',
+      'assets/promo.png', // Diubah menjadi promo.png agar pas dengan aset Anda
       'assets/promo_member.png',
     ];
 
@@ -231,8 +231,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: ClipRRect(borderRadius: BorderRadius.circular(15)),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  // PEMANGGILAN IMAGE ASSET SUDAH DITAMBAHKAN DI SINI
+                  child: Image.asset(
+                    bannerImages[index],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey.shade200,
+                        alignment: Alignment.center,
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                              size: 35,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Gambar tidak ditemukan',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
               );
             },
           ),
@@ -404,7 +442,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 6. Tab Rekomendasi Untukmu
   Widget _buildRekomendasiUntukmu() {
-    // 🟢 'Terdekat' sudah resmi dihapus dari list di bawah ini
     List<String> tabs = ['Sering Dikunjungi', 'Wishlist', 'Mengikuti'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,15 +508,12 @@ class _HomeScreenState extends State<HomeScreen> {
             snapshot.data!.docs,
           );
 
-          // 🟢 Logika filter tab disesuaikan karena 'Terdekat' dihapus
           if (_selectedTab == 1) {
-            // Index 1 sekarang murni milik Wishlist
             filteredDocs = filteredDocs.where((doc) {
               final bookData = doc.data() as Map<String, dynamic>;
               return bookData['isFavorite'] == true;
             }).toList();
           } else if (_selectedTab == 0) {
-            // Index 0 murni milik Sering Dikunjungi (Urut Rating tertinggi)
             filteredDocs.sort((a, b) {
               final dataA = a.data() as Map<String, dynamic>;
               final dataB = b.data() as Map<String, dynamic>;

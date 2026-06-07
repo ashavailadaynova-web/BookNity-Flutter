@@ -151,9 +151,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                   index < widget.book.rating.floor()
                                       ? Icons.star_rounded
                                       : (index < widget.book.rating &&
-                                              widget.book.rating % 1 != 0)
-                                          ? Icons.star_half_rounded
-                                          : Icons.star_outline_rounded,
+                                            widget.book.rating % 1 != 0)
+                                      ? Icons.star_half_rounded
+                                      : Icons.star_outline_rounded,
                                   color: Colors.amber,
                                   size: 18,
                                 );
@@ -349,13 +349,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       CircleAvatar(
                         radius: 22,
                         backgroundColor: Colors.grey.shade300,
-                        backgroundImage: widget.book.sellerAvatar.startsWith('http')
+                        backgroundImage:
+                            widget.book.sellerAvatar.startsWith('http')
                             ? NetworkImage(widget.book.sellerAvatar)
                             : (widget.book.sellerAvatar.isNotEmpty
-                                ? AssetImage(widget.book.sellerAvatar)
-                                : const AssetImage(
-                                    'assets/images/default_avatar.png',
-                                  )) as ImageProvider,
+                                      ? AssetImage(widget.book.sellerAvatar)
+                                      : const AssetImage(
+                                          'assets/images/default_avatar.png',
+                                        ))
+                                  as ImageProvider,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -371,7 +373,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               ),
                             ),
                             Text(
-                              '${widget.book.sellerCity}',
+                              widget.book.storeName,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey.shade600,
@@ -409,6 +411,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => OtherProfileScreen(
+                                    sellerId: widget.book.sellerId,
                                     name:
                                         sellerData['name'] ??
                                         sellerData['username'] ??
@@ -423,13 +426,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                     bio:
                                         sellerData['bio'] ??
                                         'Belum ada biodata toko.',
-                                    totalTerjual: sellerData['totalTerjual'] ?? 0,
-                                    totalMembeli: sellerData['totalMembeli'] ?? 0,
+                                    totalTerjual:
+                                        sellerData['totalTerjual'] ?? 0,
+                                    totalMembeli:
+                                        sellerData['totalMembeli'] ?? 0,
                                     penilaian: sellerData['rating'] != null
                                         ? (sellerData['rating'] as num)
-                                            .toDouble()
+                                              .toDouble()
                                         : widget.book.rating,
-                                    profileType: sellerData['profileType'] ?? 'seller',
+                                    profileType:
+                                        sellerData['profileType'] ?? 'seller',
                                   ),
                                 ),
                               );
@@ -658,13 +664,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             context,
                             MaterialPageRoute(
                               builder: (context) => OfferScreen(
-                                    productId: widget.book.id ?? '',
-                                    title: widget.book.title,
-                                    author: widget.book.author,
-                                    imageUrl: widget.book.image,
-                                    originalPrice: parsedPrice,
-                                    sellerId: widget.book.sellerId,
-                                  ),
+                                productId: widget.book.id ?? '',
+                                title: widget.book.title,
+                                author: widget.book.author,
+                                imageUrl: widget.book.image,
+                                originalPrice: parsedPrice,
+                                sellerId: widget.book.sellerId,
+                              ),
                             ),
                           );
                         },
@@ -698,7 +704,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PaymentScreen(book: widget.book),
+                              builder: (context) =>
+                                  PaymentScreen(book: widget.book),
                             ),
                           );
                         },
@@ -726,6 +733,82 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      color: Colors.grey.shade300,
+      child: const Center(
+        child: Icon(Icons.menu_book_rounded, size: 50, color: Colors.grey),
+      ),
+    );
+  }
+
+  Widget _buildTag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F0E6),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFFA23914),
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String title, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        const SizedBox(height: 4),
+        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+      ],
+    );
+  }
+
+  Widget _buildReviewItem(String name, String rating, String review) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(rating),
+          const SizedBox(height: 4),
+          Text(review),
+        ],
+      ),
+    );
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return const Center(child: CircularProgressIndicator());
+      },
     );
   }
 }
