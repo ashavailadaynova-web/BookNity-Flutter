@@ -7,6 +7,7 @@ import 'view/Profile/profile_screen.dart';
 // 🔥 SESUAI STRUKTUR PROYEKMU: Mengimport halaman tambah produk/buku
 import 'view/add_product_screen.dart';
 
+
 class MainScreen extends StatefulWidget {
   final int selectedIndex;
 
@@ -17,7 +18,15 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+
+  _currentIndex =
+      widget.selectedIndex;
+}
 
   // List halaman utama navigasi bawah
   final List<Widget> _screens = [

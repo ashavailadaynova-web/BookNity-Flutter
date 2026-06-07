@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'Profile/profile_screen.dart';
 import '../../main_screen.dart';
+import 'Profile/profile_screen.dart';
 
 class SuccessAddProductScreen extends StatelessWidget {
   const SuccessAddProductScreen({super.key});
@@ -73,15 +74,15 @@ class SuccessAddProductScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 68,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainScreen(selectedIndex: 3),
-                        ),
-                        (route) => false,
-                      );
-                    },
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ProfileScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
                     style: ElevatedButton.styleFrom(
                       elevation: 8,
                       backgroundColor: const Color(0xff4A241B),

@@ -5,15 +5,14 @@ import '../../viewmodel/book_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../Login Register/login_screen.dart';
-// PASTIKAN PATH IMPORT DI BAWAH INI SESUAI DENGAN FOLDER KAMU:
 import 'edit_profile_screen.dart';
 import '../add_product_screen.dart';
 import 'help_center_screen.dart';
 import 'settings_screen.dart';
 import '../../viewmodel/user_viewmodel.dart';
-
-// IMPORT WIDGET PRODUCT CARD YANG BARU SAJA DIPISAH:
-import '../../widgets/product_card.dart'; // Sesuaikan lokasi foldernya!
+import '../Profile/edit_product_screen.dart';
+import '../../widgets/product_card.dart';
+import '../Beranda/wishlist_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -76,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             border: Border.all(color: Colors.white, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withValues(alpha: 0.08),
                                 blurRadius: 15,
                                 offset: const Offset(0, 8),
                               ),
@@ -172,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -251,9 +250,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             iconColor: const Color(0xFFFF7043),
                             title: "Wishlist Saya",
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Membuka Wishlist Saya...'),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const WishlistScreen(),
                                 ),
                               );
                             },
@@ -306,8 +306,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: "Keluar Akun",
                             textColor: const Color(0xFFB13D14),
                             onTap: () async {
+                              final result = await showDialog<bool>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    title: const Text("Keluar Akun"),
+                                    content: const Text(
+                                      "Apakah kamu yakin ingin keluar dari akun ini?",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context, false);
+                                        },
+                                        child: const Text("Batal"),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(
+                                            0xFFB13D14,
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pop(context, true);
+                                        },
+                                        child: const Text("Keluar"),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              if (result != true) return;
+
                               await FirebaseAuth.instance.signOut();
+
                               if (!context.mounted) return;
+
                               Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
@@ -342,7 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 24),
@@ -373,7 +411,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.08),
+          color: iconColor.withValues(alpha: 0.08),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: iconColor, size: 24),
@@ -405,7 +443,6 @@ class ProductSection extends StatelessWidget {
     required this.isSoldOutSection,
   });
 
-  // 🟢 FUNGSI PEMBANTU: Format teks rupiah agar rapi menggunakan titik pembagi ribuan
   String _formatRupiah(String price) {
     if (price.isEmpty) return 'Rp 0';
     String cleanPrice = price.replaceAll(RegExp(r'[^0-9]'), '');
@@ -424,7 +461,7 @@ class ProductSection extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double cardWidth = (screenWidth - 20 - 20 - 16) / 2;
-    double emptyCardHeight = (cardWidth * 4 / 3) + 102;
+    double emptyCardHeight = (cardWidth * 4 / 3) + 130;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,7 +469,8 @@ class ProductSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment
+                .spaceBetween, // Diperbaiki dari 'between' ke MainAxisAlignment.spaceBetween
             children: [
               Text(
                 title,
@@ -455,18 +493,23 @@ class ProductSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        SizedBox(
-          height: 360,
-          child: StreamBuilder<List<BookModel>>(
-            stream: context.read<BookViewModel>().booksStream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+        StreamBuilder<List<BookModel>>(
+          stream: context.read<BookViewModel>().booksStream,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-              final books = snapshot.data ?? [];
+            final currentUser = FirebaseAuth.instance.currentUser;
+            final books = (snapshot.data ?? [])
+                .where(
+                  (book) => book.sellerId == currentUser?.uid && !book.isSold,
+                )
+                .toList();
 
-              return SingleChildScrollView(
+            return SizedBox(
+              height: 350,
+              child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -482,26 +525,61 @@ class ProductSection extends StatelessWidget {
                             imageUrl: book.image,
                             title: book.title,
                             author: book.author,
-                            // 🟢 SEKARANG SUDAH DI-FORMAT: Membungkus harga mentah dengan format rupiah otomatis
                             price: _formatRupiah(book.price),
                             onTap: () {},
                             onEditTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Edit ${book.title}')),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EditProductScreen(book: book),
+                                ),
                               );
                             },
                             onDeleteTap: () async {
-                              if (book.id != null) {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text("Hapus Buku"),
+                                    content: Text(
+                                      "Yakin ingin menghapus '${book.title}' ?",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context, false);
+                                        },
+                                        child: const Text("Tidak"),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context, true);
+                                        },
+                                        child: const Text("Ya"),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              if (confirm == true && book.id != null) {
                                 await context.read<BookViewModel>().deleteBook(
                                   book.id!,
+                                );
+
+                                if (!context.mounted) return;
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Buku berhasil dihapus"),
+                                  ),
                                 );
                               }
                             },
                           ),
                         ),
                       );
-                    }).toList(),
-
+                    }),
                     if (!isSoldOutSection)
                       SizedBox(
                         width: cardWidth,
@@ -509,9 +587,9 @@ class ProductSection extends StatelessWidget {
                       ),
                   ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -529,9 +607,9 @@ class ProductSection extends StatelessWidget {
       child: Container(
         height: height,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.5),
+          color: Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
         ),
         child: Center(
           child: Column(
@@ -542,7 +620,7 @@ class ProductSection extends StatelessWidget {
                 size: 40,
                 color: Color(0xFFB13D14),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 6),
               Text(
                 "Tambah Buku",
                 textAlign: TextAlign.center,

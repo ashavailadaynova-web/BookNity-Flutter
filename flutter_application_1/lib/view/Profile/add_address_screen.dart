@@ -1,6 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+
+import '../../model/address_model.dart';
+import '../../viewmodel/address_viewmodel.dart';
 
 class AddAddressScreen extends StatefulWidget {
   const AddAddressScreen({super.key});
@@ -13,6 +17,9 @@ class AddAddressScreen extends StatefulWidget {
 class _AddAddressScreenState
     extends State<AddAddressScreen> {
 
+  final _labelController =
+      TextEditingController();
+
   final _recipientController =
       TextEditingController();
 
@@ -22,8 +29,14 @@ class _AddAddressScreenState
   final _addressController =
       TextEditingController();
 
-  final _labelController =
-      TextEditingController();
+  @override
+  void dispose() {
+    _labelController.dispose();
+    _recipientController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,15 +59,15 @@ class _AddAddressScreenState
             Icons.arrow_back_ios_new_rounded,
             color: primaryTextColor,
           ),
-          onPressed: () =>
-              Navigator.pop(context),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
 
         title: Text(
           "Tambah Alamat",
           style: GoogleFonts.poppins(
-            fontWeight:
-                FontWeight.bold,
+            fontWeight: FontWeight.bold,
             color: primaryTextColor,
           ),
         ),
@@ -95,8 +108,7 @@ class _AddAddressScreenState
                   _addressController,
               maxLines: 4,
 
-              decoration:
-                  InputDecoration(
+              decoration: InputDecoration(
                 labelText:
                     "Alamat Lengkap",
 
@@ -117,11 +129,51 @@ class _AddAddressScreenState
               height: 55,
 
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
 
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(
+                  // VALIDASI
+                  if (_labelController.text.trim().isEmpty ||
+                      _recipientController.text.trim().isEmpty ||
+                      _phoneController.text.trim().isEmpty ||
+                      _addressController.text.trim().isEmpty) {
+
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "Semua data alamat wajib diisi",
+                        ),
+                      ),
+                    );
+
+                    return;
+                  }
+
+                  final user =
+                      FirebaseAuth.instance.currentUser;
+
+                  if (user == null) return;
+
+                  final address =
+                      AddressModel(
+                    id: '',
+                    label: _labelController.text.trim(),
+                    recipient: _recipientController.text.trim(),
+                    phone: _phoneController.text.trim(),
+                    address: _addressController.text.trim(),
+                  );
+
+                  await context
+                      .read<AddressViewModel>()
+                      .addAddress(
+                        user.uid,
+                        address,
+                      );
+
+                  if (!mounted) return;
+
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
                     const SnackBar(
                       content: Text(
                         "Alamat berhasil disimpan",
@@ -129,9 +181,7 @@ class _AddAddressScreenState
                     ),
                   );
 
-                  Navigator.pop(
-                    context,
-                  );
+                  Navigator.pop(context);
                 },
 
                 style:
@@ -188,4 +238,3 @@ class _AddAddressScreenState
     );
   }
 }
-

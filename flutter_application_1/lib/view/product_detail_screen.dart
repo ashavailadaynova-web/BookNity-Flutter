@@ -63,12 +63,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.black87),
-            onPressed: () {},
-          ),
-        ],
       ),
 
       // Menggunakan Column agar Bottom Bar di bawah tetap terkunci sempurna
@@ -503,7 +497,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       stream: FirebaseFirestore.instance
                           .collection('books')
                           .where('category', isEqualTo: widget.book.category)
-                          .limit(10)
+                          .limit(
+                            11,
+                          ) // Ambil 11 data (karena 1 data akan dibuang jika itu buku yang sedang dibuka)
                           .snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
@@ -531,16 +527,34 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           );
                         }
 
-                        final recommendedBooks = snapshot.data!.docs;
+                        // 🟢 1. PENYELAMAT: Filter agar buku yang sedang dibuka saat ini tidak masuk daftar rekomendasi
+                        final rawDocs = snapshot.data!.docs;
+                        final recommendedBooks = rawDocs
+                            .where((doc) => doc.id != widget.book.id)
+                            .toList();
+
+                        // Jika setelah difilter ternyata kosong (artinya di DB cuma ada 1 buku ini saja untuk kategori tersebut)
+                        if (recommendedBooks.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'Tidak ada buku serupa lainnya.',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
+                            ),
+                          );
+                        }
+
                         return ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: recommendedBooks.length,
                           separatorBuilder: (context, index) =>
                               const SizedBox(width: 16),
                           itemBuilder: (context, index) {
-                            final bookData =
-                                recommendedBooks[index].data()
-                                    as Map<String, dynamic>;
+                            final doc = recommendedBooks[index];
+                            final bookData = doc.data() as Map<String, dynamic>;
+
                             return BuyerProductCard(
                               imageUrl:
                                   bookData['imageUrl'] ??
@@ -551,8 +565,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               rating: '${bookData['rating'] ?? 0.0}',
                               storeName: bookData['storeName'] ?? 'Toko Buku',
                               isFavorite: bookData['isFavorite'] ?? false,
-                              onTap: () {},
-                              onFavoriteTap: () {},
+
+                              // 🟢 2. AKSI ONTAP: Pindah ke halaman detail produk baru
+                              onTap: () {
+                                // Kita ubah dulu data dari Firestore doc ini menjadi objek BookModel / Book milikmu
+                                // Sesuaikan 'BookModel.fromFirestore(doc)' dengan model class yang kamu gunakan di projectmu
+                                final clickedBook = BookModel.fromMap(
+                                  doc.data() as Map<String, dynamic>,
+                                  doc.id,
+                                );
+
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ProductDetailScreen(book: clickedBook),
+                                  ),
+                                );
+                              },
+                              onFavoriteTap: () {
+                                // Opsional: Logika favorit untuk buku serupa
+                              },
                             );
                           },
                         );
